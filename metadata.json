@@ -1,0 +1,7 @@
+{
+  "name": "ATSBeaters - Intelligent Resume Analyzer",
+  "description": "A high-performance ATS resume analysis tool using Gemini AI to score resumes, identify missing keywords, and provide professional rewrite suggestions, plus an AI headshot editor.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

@@ -1,0 +1,6 @@
+
+google-generativeai
+sendgrid
+python-docx
+python-dotenv
+markdown
