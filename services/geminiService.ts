@@ -2,8 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, KeywordResult, ATSCompatibilityResult } from "../types";
 
-// Always use the process.env.API_KEY directly as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Always use the import.meta.env.VITE_API_KEY directly as per guidelines
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 
 const RESUME_SCHEMA = {
   type: Type.OBJECT,
@@ -81,7 +81,7 @@ export const rewriteFullResume = async (content: string, analysis?: string): Pro
     ${analysis ? `Use this analysis context: ${analysis}` : ''}
     
     Resume Content:
-    ${content}`,
+    ${content}`,h
   });
   return response.text || '';
 };
