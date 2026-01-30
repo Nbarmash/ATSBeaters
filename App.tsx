@@ -412,7 +412,7 @@ const App: React.FC = () => {
              <button onClick={() => setActiveTab(AppTab.HELP)} className="text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">FAQ</button>
           </nav>
           
-          {user ? (
+          h{(
             <div className="flex items-center space-x-5">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-black text-slate-900">{user.name}</p>
@@ -425,12 +425,8 @@ const App: React.FC = () => {
                 <i className="fas fa-power-off"></i>
               </button>
             </div>
-          ) : (
             <div className="flex space-x-3">
-               <button onClick={() => setAuthMode('login')} className="hidden sm:block px-6 py-3 text-slate-500 font-black text-sm hover:text-slate-900 transition-colors">Login</button>
-               <button onClick={() => setAuthMode('signup')} className="px-7 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-600/10 transition-all active:scale-95">Get Started Free</button>
-            </div>
-          )}
+          )
 
           {/* Mobile Menu Toggle */}
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600">
