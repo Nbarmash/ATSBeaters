@@ -307,7 +307,8 @@ const App: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
              <label className="text-xs font-black text-slate-300 uppercase tracking-widest">{config.label1}</label>
              <div className="flex space-x-2">
-                <button onClick={() => setInput1(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black text-slate-500 transition-all active:scale-95">Sample: Tech</button>
+                <button onClick=415
+               ) => setInput1(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black text-slate-500 transition-all active:scale-95">Sample: Tech</button>
                 <button onClick={() => setInput1(SAMPLES.sales)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black text-slate-500 transition-all active:scale-95">Sample: Sales</button>
              </div>
           </div>
