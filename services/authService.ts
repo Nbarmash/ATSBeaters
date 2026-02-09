@@ -5,7 +5,20 @@ const STORAGE_KEY = 'atsbeaters_user';
 
 export const getCurrentUser = (): User | null => {
   const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : null;
+return data ? JSON.parse(data) : getGuestUser();};
+
+// Create a guest user for free tier access without login
+export const getGuestUser = (): User => {
+    const guestUser: User = {
+          id: 'guest_' + Math.random().toString(36).substr(2, 9),
+          email: 'guest@trial.local',
+          name: 'Guest User',
+          tier: 'free',
+          credits: 1,
+          history: [],
+          joinedAt: new Date()
+    };
+    return guestUser;
 };
 
 export const login = (email: string, name: string): User => {
