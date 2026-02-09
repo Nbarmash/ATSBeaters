@@ -18,7 +18,6 @@ const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const runService = async () => {
-    if (!user) { setAuthMode('login'); return; }
     if (user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
 
     setState({ isAnalyzing: true, result: null, error: null });
