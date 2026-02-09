@@ -18,8 +18,6 @@ const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const runService = async () => {
-        // Free tier: Allow guest users to try the app with 1 free analysis
-            // if (!user) { setAuthMode('login'); return; }
     if (user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
 
     setState({ isAnalyzing: true, result: null, error: null });
