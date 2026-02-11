@@ -2,8 +2,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, KeywordResult, ATSCompatibilityResult } from "../types";
 
-// Always use the import.meta.env.VITE_API_KEY directly as per guidelines
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+let _ai: GoogleGenAI | null = null;
+
+function getAI(): GoogleGenAI {
+  if (!_ai) {
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        'Gemini API key is not configured. Set GEMINI_API_KEY in your .env.local file.'
+      );
+    }
+    _ai = new GoogleGenAI({ apiKey });
+  }
+  return _ai;
+}
 
 const RESUME_SCHEMA = {
   type: Type.OBJECT,
@@ -65,7 +77,7 @@ const QUANTIFIER_SCHEMA = {
 };
 
 export const analyzeResume = async (content: string): Promise<AnalysisResult> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Analyze this resume for ATS compatibility: ${content}`,
     config: { responseMimeType: "application/json", responseSchema: RESUME_SCHEMA }
@@ -74,20 +86,20 @@ export const analyzeResume = async (content: string): Promise<AnalysisResult> =>
 };
 
 export const rewriteFullResume = async (content: string, analysis?: string): Promise<string> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-pro-preview",
     contents: `Rewrite the following resume to be highly ATS-optimized. 
     Use strong action verbs, quantify achievements, and integrate relevant keywords.
     ${analysis ? `Use this analysis context: ${analysis}` : ''}
     
     Resume Content:
-    ${content}`,h
+    ${content}`,
   });
   return response.text || '';
 };
 
 export const quickRewrite = async (content: string): Promise<string> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Quickly optimize this resume content for ATS systems. Improve verbs and keywords. 
     Content: ${content}`,
@@ -96,7 +108,7 @@ export const quickRewrite = async (content: string): Promise<string> => {
 };
 
 export const generateCoverLetter = async (resume: string, jobDesc: string): Promise<string> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Generate a professional cover letter based on this resume and job description.
     Resume: ${resume}
@@ -106,7 +118,7 @@ export const generateCoverLetter = async (resume: string, jobDesc: string): Prom
 };
 
 export const extractKeywords = async (jobDesc: string): Promise<KeywordResult> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Extract keywords and skills from this job description: ${jobDesc}`,
     config: { responseMimeType: "application/json", responseSchema: KEYWORD_SCHEMA }
@@ -115,7 +127,7 @@ export const extractKeywords = async (jobDesc: string): Promise<KeywordResult> =
 };
 
 export const checkATSCompatibility = async (content: string): Promise<ATSCompatibilityResult> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Check if this resume formatting parses correctly in ATS (fonts, tables, characters): ${content}`,
     config: { responseMimeType: "application/json", responseSchema: ATS_CHECK_SCHEMA }
@@ -124,7 +136,7 @@ export const checkATSCompatibility = async (content: string): Promise<ATSCompati
 };
 
 export const quantifyAchievements = async (bullets: string): Promise<any[]> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Transform these weak bullet points into strong achievement statements with metrics: ${bullets}`,
     config: { responseMimeType: "application/json", responseSchema: QUANTIFIER_SCHEMA }
@@ -133,7 +145,7 @@ export const quantifyAchievements = async (bullets: string): Promise<any[]> => {
 };
 
 export const generateSummary = async (content: string): Promise<string> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Create a compelling 3-4 sentence professional summary based on this resume: ${content}`,
   });
@@ -141,7 +153,7 @@ export const generateSummary = async (content: string): Promise<string> => {
 };
 
 export const optimizeSkills = async (content: string): Promise<string> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Optimize this skills section for ATS relevance and readability. Categorize them logically.
     Skills/Content: ${content}`,
@@ -150,7 +162,7 @@ export const optimizeSkills = async (content: string): Promise<string> => {
 };
 
 export const editProfessionalPhoto = async (base64Image: string, prompt: string): Promise<string> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: {
       parts: [
