@@ -18,7 +18,7 @@ const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const runService = async () => {
-        if (!user) { setAuthMode('login'); return; }
+        // Guest user access enabled - free tier testing allowed
     if (user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
 
     setState({ isAnalyzing: true, result: null, error: null });
@@ -307,7 +307,7 @@ const App: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
              <label className="text-xs font-black text-slate-300 uppercase tracking-widest">{config.label1}</label>
              <div className="flex space-x-2">
-            <button onClick={() => setInput(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black:button">Sample: Tech</button>button></button>             </div>
+            <button onClick={() => setInput(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black:button">Sample: Tech</button></button>             </div>
           </div>
           <textarea 
             value={input1} onChange={(e) => setInput1(e.target.value)}
@@ -410,7 +410,7 @@ const App: React.FC = () => {
              <button onClick={() => setActiveTab(AppTab.HELP)} className="text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">FAQ</button>
           </nav>
           
-          h{(
+          {user && (
             <div className="flex items-center space-x-5">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-black text-slate-900">{user.name}</p>
