@@ -1,3 +1,4 @@
+h380
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppTab, AnalysisState, User, HistoryEntry } from './types';
@@ -307,7 +308,7 @@ const App: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
              <label className="text-xs font-black text-slate-300 uppercase tracking-widest">{config.label1}</label>
              <div className="flex space-x-2">
-            <button onClick={() => setInput(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black:button">Sample: Tech</button></button>             </div>
+            <button onClick={() => setInput1(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Tech</button>             </div>
           </div>
           <textarea 
             value={input1} onChange={(e) => setInput1(e.target.value)}
