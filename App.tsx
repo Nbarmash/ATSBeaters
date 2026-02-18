@@ -1,4 +1,3 @@
-h380
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppTab, AnalysisState, User, HistoryEntry } from './types';
@@ -17,6 +16,8 @@ const App: React.FC = () => {
   const [showPricing, setShowPricing] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [isParsingFile, setIsParsingFile] = useState(false);
 
   const runService = async () => {
         // Guest user access enabled - free tier testing allowed
@@ -37,6 +38,11 @@ const App: React.FC = () => {
         case AppTab.SKILLS: result = await api.optimizeSkills(input1); break;
       }
       setState({ isAnalyzing: false, result, error: null });
+    if (user && user.tier === 'free') {
+      const updatedUser = { ...user, credits: Math.max(0, user.credits - 1) };
+      localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    }
     } catch (err: any) {
       setState({ isAnalyzing: false, result: null, error: err.message || 'Service failed' });
     }
@@ -50,9 +56,59 @@ const App: React.FC = () => {
     }
   };
 
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext === 'txt') {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target?.result as string || '');
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+      });
+    }
+    if (ext === 'pdf') {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (!pdfjsLib) throw new Error('PDF reader not loaded. Please refresh the page.');
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map((item: any) => item.str).join(' ') + '\n';
+      }
+      return text;
+    }
+    if (ext === 'docx') {
+      const mammoth = (window as any).mammoth;
+      if (!mammoth) throw new Error('DOCX reader not loaded. Please refresh the page.');
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+    throw new Error('Unsupported file type. Please upload PDF, DOCX, or TXT.');
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    setIsParsingFile(true);
+    setUploadedFileName(null);
+    try {
+      const text = await extractTextFromFile(file);
+      if (!text.trim()) throw new Error('Could not extract text from file. Try copying and pasting instead.');
+      setInput1(text);
+      setUploadedFileName(file.name);
+    } catch (err: any) {
+      alert('File error: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsParsingFile(false);
+    }
+  };
+
   const handleReset = useCallback(() => {
     setInput1('');
     setInput2('');
+    setUploadedFileName(null);
     setState({ isAnalyzing: false, result: null, error: null });
   }, []);
 
@@ -308,7 +364,58 @@ const App: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
              <label className="text-xs font-black text-slate-300 uppercase tracking-widest">{config.label1}</label>
              <div className="flex space-x-2">
-            <button onClick={() => setInput1(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Tech</button>             </div>
+            <button onClick={() => setInput1(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Tech</button>
+              <button onClick={() => setInput1(SAMPLES.sales)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Sales</button>
+              <button onClick={() => setInput1(SAMPLES.ops)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Ops</button>             </div>
+          </div>
+          <div
+            className="mb-4"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              if (file) handleFileUpload(file);
+            }}
+          >
+            {uploadedFileName ? (
+              <div className="flex items-center justify-between px-5 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl mb-3">
+                <div className="flex items-center space-x-3">
+                  <i className="fas fa-file-check text-emerald-500"></i>
+                  <span className="text-sm font-bold text-emerald-700 truncate max-w-xs">{uploadedFileName}</span>
+                </div>
+                <button
+                  onClick={() => { setUploadedFileName(null); setInput1(''); }}
+                  className="text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors"
+                >
+                  <i className="fas fa-times mr-1"></i>Remove
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all mb-3 group">
+                {isParsingFile ? (
+                  <div className="flex items-center space-x-2 text-indigo-400">
+                    <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm font-bold">Reading file...</span>
+                  </div>
+                ) : (
+                  <>
+                    <i className="fas fa-cloud-arrow-up text-2xl text-slate-300 group-hover:text-indigo-400 transition-colors mb-1"></i>
+                    <span className="text-xs font-black text-slate-400 group-hover:text-indigo-500 transition-colors">Drop resume here or <span className="text-indigo-500">click to browse</span></span>
+                    <span className="text-[10px] text-slate-300 mt-0.5">PDF, DOCX, or TXT</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
           </div>
           <textarea 
             value={input1} onChange={(e) => setInput1(e.target.value)}
@@ -424,8 +531,7 @@ const App: React.FC = () => {
                 <i className="fas fa-power-off"></i>
               </button>
             </div>
-            <div className="flex space-x-3">
-          )
+          )}
 
           {/* Mobile Menu Toggle */}
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600">
