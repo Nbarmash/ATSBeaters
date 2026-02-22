@@ -28,8 +28,7 @@ Field: ${result.suggestedJobField}
 Missing Keywords: ${result.missingKeywords.join(', ')}
 
 Formatting Issues:
-${result.formattingIssues.join('
-')}`;
+${result.formattingIssues.join(String.fromCharCode(10))}`;
     const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
