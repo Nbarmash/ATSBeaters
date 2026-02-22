@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppTab, AnalysisState, User, HistoryEntry } from './types';
 import * as api from './services/geminiService';
@@ -20,9 +19,7 @@ const App: React.FC = () => {
   const [isParsingFile, setIsParsingFile] = useState(false);
 
   const runService = async () => {
-        // Guest user access enabled - free tier testing allowed
     if (user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
-
     setState({ isAnalyzing: true, result: null, error: null });
     try {
       let result;
@@ -38,16 +35,15 @@ const App: React.FC = () => {
         case AppTab.SKILLS: result = await api.optimizeSkills(input1); break;
       }
       setState({ isAnalyzing: false, result, error: null });
-    if (user && user.tier === 'free') {
-      const updatedUser = { ...user, credits: Math.max(0, user.credits - 1) };
-      localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-    }
+      if (user && user.tier === 'free') {
+        const updatedUser = { ...user, credits: Math.max(0, user.credits - 1) };
+        localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
     } catch (err: any) {
       setState({ isAnalyzing: false, result: null, error: err.message || 'Service failed' });
     }
   };
-
   const handleSave = () => {
     if (state.result) {
       auth.saveToHistory({ type: activeTab, input: input1, result: state.result });
@@ -75,7 +71,8 @@ const App: React.FC = () => {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        text += content.items.map((item: any) => item.str).join(' ') + '\n';
+        text += content.items.map((item: any) => item.str).join(' ') + '
+';
       }
       return text;
     }
@@ -91,24 +88,18 @@ const App: React.FC = () => {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-    setIsParsingFile(true);
-    setUploadedFileName(null);
+    setIsParsingFile(true); setUploadedFileName(null);
     try {
       const text = await extractTextFromFile(file);
       if (!text.trim()) throw new Error('Could not extract text from file. Try copying and pasting instead.');
-      setInput1(text);
-      setUploadedFileName(file.name);
+      setInput1(text); setUploadedFileName(file.name);
     } catch (err: any) {
       alert('File error: ' + (err.message || 'Unknown error'));
-    } finally {
-      setIsParsingFile(false);
-    }
+    } finally { setIsParsingFile(false); }
   };
 
   const handleReset = useCallback(() => {
-    setInput1('');
-    setInput2('');
-    setUploadedFileName(null);
+    setInput1(''); setInput2(''); setUploadedFileName(null);
     setState({ isAnalyzing: false, result: null, error: null });
   }, []);
 
@@ -118,11 +109,8 @@ const App: React.FC = () => {
     const email = formData.get('email') as string;
     const name = formData.get('name') as string || 'Career Pro';
     const loggedInUser = auth.login(email, name);
-    setUser(loggedInUser);
-    setAuthMode(null);
-    setActiveTab(AppTab.DASHBOARD);
+    setUser(loggedInUser); setAuthMode(null); setActiveTab(AppTab.DASHBOARD);
   };
-
   const menuItems = [
     { id: AppTab.DASHBOARD, label: 'Performance', icon: 'fa-house-user' },
     { id: AppTab.ANALYZER, label: 'Resume Analysis', icon: 'fa-microscope' },
@@ -138,203 +126,204 @@ const App: React.FC = () => {
     { id: AppTab.HELP, label: 'Help & FAQ', icon: 'fa-circle-question' },
   ];
 
+  // Mobile bottom nav - show 5 key tabs
+  const mobileNavItems = [
+    { id: AppTab.DASHBOARD, label: 'Home', icon: 'fa-house-user' },
+    { id: AppTab.ANALYZER, label: 'Analyze', icon: 'fa-microscope' },
+    { id: AppTab.REWRITE, label: 'Rewrite', icon: 'fa-pen-to-square' },
+    { id: AppTab.COVER_LETTER, label: 'Cover', icon: 'fa-envelope-open-text' },
+    { id: AppTab.HELP, label: 'More', icon: 'fa-grid-2' },
+  ];
+
   const renderAuth = () => (
     <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 border border-slate-100">
-        <button onClick={() => setAuthMode(null)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-500"><i className="fas fa-times text-xl"></i></button>
-        <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-xl shadow-indigo-600/20">
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 md:p-10 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
+        <button onClick={() => setAuthMode(null)} className="absolute top-6 right-6 text-slate-300 hover:text-slate-500"><i className="fas fa-times text-xl"></i></button>
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white text-2xl mx-auto mb-4 shadow-xl shadow-indigo-600/20">
             <i className="fas fa-fingerprint"></i>
           </div>
-          <h2 className="text-3xl font-black text-slate-900 mb-2">{authMode === 'login' ? 'Welcome Back' : 'Get Started'}</h2>
-          <p className="text-slate-500 font-medium leading-relaxed">Join 20k+ job seekers beating the bots daily.</p>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">{authMode === 'login' ? 'Welcome Back' : 'Get Started'}</h2>
+          <p className="text-slate-500 font-medium text-sm leading-relaxed">Join 20k+ job seekers beating the bots daily.</p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-4">
           {authMode === 'signup' && (
             <div className="relative">
               <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-              <input name="name" type="text" placeholder="Full Name" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700" />
+              <input name="name" type="text" placeholder="Full Name" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700 text-base" />
             </div>
           )}
           <div className="relative">
-             <i className="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-             <input name="email" type="email" placeholder="Email Address" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700" />
+            <i className="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input name="email" type="email" placeholder="Email Address" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700 text-base" />
           </div>
-          <button className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-600/10 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">
+          <button className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-base shadow-xl shadow-indigo-600/10 hover:bg-indigo-700 active:scale-95 transition-all">
             {authMode === 'login' ? 'Login to Dashboard' : 'Create Free Account'}
           </button>
         </form>
-        <div className="mt-8 pt-8 border-t border-slate-50 flex flex-col items-center space-y-4">
-           <p className="text-sm text-slate-400 font-medium">By continuing, you agree to our Terms of Service.</p>
-           <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-indigo-600 font-bold hover:underline">
-              {authMode === 'login' ? "New here? Create account" : "Already registered? Login here"}
-           </button>
+        <div className="mt-6 pt-6 border-t border-slate-50 flex flex-col items-center space-y-3">
+          <p className="text-sm text-slate-400 font-medium text-center">By continuing, you agree to our Terms of Service.</p>
+          <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-indigo-600 font-bold hover:underline text-sm">
+            {authMode === 'login' ? "New here? Create account" : "Already registered? Login here"}
+          </button>
         </div>
       </div>
     </div>
   );
-
   const renderDashboard = () => {
     if (!user) return null;
     return (
-      <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
         {/* Analytics Hero */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 rounded-full"></div>
-            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Member Level</p>
-            <p className="text-3xl font-black text-slate-900 capitalize">{user.tier}</p>
-            <button onClick={() => setShowPricing(true)} className="mt-4 text-xs font-bold text-indigo-600 hover:underline">Manage Subscription →</button>
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+          <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-indigo-50 rounded-full"></div>
+            <p className="text-[9px] md:text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Member Level</p>
+            <p className="text-xl md:text-3xl font-black text-slate-900 capitalize">{user.tier}</p>
+            <button onClick={() => setShowPricing(true)} className="mt-2 md:mt-4 text-xs font-bold text-indigo-600 hover:underline">Manage →</button>
           </div>
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Insights</p>
-            <p className="text-3xl font-black text-slate-900">{user.history.length}</p>
-            <div className="w-full h-1.5 bg-slate-100 rounded-full mt-5 overflow-hidden">
-               <div className="h-full bg-slate-300 w-3/4"></div>
+          <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100">
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Insights</p>
+            <p className="text-xl md:text-3xl font-black text-slate-900">{user.history.length}</p>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
+              <div className="h-full bg-slate-300 w-3/4"></div>
             </div>
           </div>
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Success Velocity</p>
-            <p className="text-3xl font-black text-emerald-500">+42%</p>
-            <p className="text-[10px] font-bold text-slate-400 mt-4 italic">Above platform average</p>
+          <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100">
+            <p className="text-[9px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Success Velocity</p>
+            <p className="text-xl md:text-3xl font-black text-emerald-500">+42%</p>
+            <p className="text-[9px] md:text-[10px] font-bold text-slate-400 mt-2 italic">Above avg</p>
           </div>
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2">Credits Remaining</p>
-            <p className="text-3xl font-black text-slate-900">{user.credits}</p>
-            <button className="mt-4 text-xs font-bold text-amber-600 hover:underline">Purchase More →</button>
+          <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100">
+            <p className="text-[9px] md:text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Credits</p>
+            <p className="text-xl md:text-3xl font-black text-slate-900">{user.credits}</p>
+            <button onClick={() => setShowPricing(true)} className="mt-2 md:mt-4 text-xs font-bold text-amber-600 hover:underline">Buy More →</button>
           </div>
         </section>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
           {/* History List */}
-          <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-slate-50 flex justify-between items-center">
-              <h3 className="font-black text-2xl text-slate-900">Career History</h3>
+          <div className="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+            <div className="p-5 md:p-8 border-b border-slate-50 flex justify-between items-center">
+              <h3 className="font-black text-xl md:text-2xl text-slate-900">Career History</h3>
               <div className="flex space-x-2">
-                 <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"><i className="fas fa-filter"></i></button>
-                 <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"><i className="fas fa-arrow-down-wide-short"></i></button>
+                <button className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"><i className="fas fa-filter text-sm"></i></button>
+                <button className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"><i className="fas fa-arrow-down-wide-short text-sm"></i></button>
               </div>
             </div>
             <div className="divide-y divide-slate-50 flex-1">
               {user.history.length > 0 ? user.history.map(h => (
-                <div key={h.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all cursor-pointer group" onClick={() => { setActiveTab(h.type); setInput1(h.input); setState({ isAnalyzing: false, result: h.result, error: null }); }}>
-                  <div className="flex items-center space-x-5">
-                    <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">
-                      <i className={`fas ${menuItems.find(m => m.id === h.type)?.icon} text-xl`}></i>
+                <div key={h.id} className="p-4 md:p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all cursor-pointer group" onClick={() => { setActiveTab(h.type); setInput1(h.input); setState({ isAnalyzing: false, result: h.result, error: null }); }}>
+                  <div className="flex items-center space-x-3 md:space-x-5">
+                    <div className="w-11 h-11 md:w-14 md:h-14 bg-indigo-50 rounded-xl md:rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform flex-shrink-0">
+                      <i className={"fas " + (menuItems.find(m => m.id === h.type)?.icon || '') + " text-lg"}></i>
                     </div>
                     <div>
-                      <p className="text-lg font-black text-slate-800">{menuItems.find(m => m.id === h.type)?.label}</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">{new Date(h.timestamp).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="text-sm md:text-lg font-black text-slate-800">{menuItems.find(m => m.id === h.type)?.label}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{new Date(h.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-3 md:space-x-6">
                     {h.result?.score && (
                       <div className="text-right">
-                        <p className="text-2xl font-black text-indigo-600">{h.result.score}%</p>
-                        <p className="text-[10px] font-black text-slate-300 uppercase">Match Score</p>
+                        <p className="text-xl md:text-2xl font-black text-indigo-600">{h.result.score}%</p>
+                        <p className="text-[9px] font-black text-slate-300 uppercase hidden md:block">Match Score</p>
                       </div>
                     )}
                     <i className="fas fa-chevron-right text-slate-200 group-hover:text-indigo-400 transition-colors"></i>
                   </div>
                 </div>
               )) : (
-                <div className="p-20 text-center text-slate-300">
-                  <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i className="fas fa-folder-open text-4xl opacity-40"></i>
+                <div className="p-12 md:p-20 text-center text-slate-300">
+                  <div className="w-16 h-16 md:w-24 md:h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                    <i className="fas fa-folder-open text-3xl md:text-4xl opacity-40"></i>
                   </div>
-                  <h4 className="text-xl font-bold text-slate-400">Your archive is empty</h4>
+                  <h4 className="text-lg md:text-xl font-bold text-slate-400">Your archive is empty</h4>
                   <p className="text-sm mt-2 max-w-xs mx-auto">Start optimizing your resume to see your progress here.</p>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Social Proof & Stats Sidebar */}
-          <div className="space-y-8">
-             <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/30">
-                <div className="relative z-10">
-                   <div className="flex items-center space-x-2 mb-6">
-                      {[1,2,3,4,5].map(s => <i key={s} className="fas fa-star text-amber-400 text-xs"></i>)}
-                      <span className="text-[10px] font-black tracking-widest opacity-70">VERIFIED USER</span>
-                   </div>
-                   <p className="text-xl font-bold leading-relaxed mb-6">"Within 48 hours of using ATSBeaters, I landed 3 interviews at top tech firms. The keyword extractor is a cheat code."</p>
-                   <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-white/20"></div>
-                      <div>
-                        <p className="font-bold text-sm">Alex Chen</p>
-                        <p className="text-[10px] opacity-60 font-bold uppercase">Senior Product Designer</p>
-                      </div>
-                   </div>
+          {/* Social Proof & Stats */}
+          <div className="space-y-6 md:space-y-8">
+            <div className="p-6 md:p-8 rounded-[2rem] bg-indigo-600 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/30">
+              <div className="relative z-10">
+                <div className="flex items-center space-x-2 mb-4">
+                  {[1,2,3,4,5].map(s => <i key={s} className="fas fa-star text-amber-400 text-xs"></i>)}
+                  <span className="text-[10px] font-black tracking-widest opacity-70">VERIFIED USER</span>
                 </div>
-                <i className="fas fa-quote-right absolute -right-4 -bottom-4 text-[120px] text-white/10"></i>
-             </div>
-
-             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-                <h4 className="font-black text-slate-900 mb-6 uppercase tracking-widest text-[10px] border-b border-slate-50 pb-4">Community Stats</h4>
-                <div className="space-y-6">
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Users Hired</span>
-                      <span className="text-lg font-black text-slate-800">14.2k+</span>
-                   </div>
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Avg Score Boost</span>
-                      <span className="text-lg font-black text-emerald-500">+28 pts</span>
-                   </div>
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Time Saved/User</span>
-                      <span className="text-lg font-black text-indigo-600">6.4 hrs</span>
-                   </div>
+                <p className="text-base md:text-xl font-bold leading-relaxed mb-4">"Within 48 hours of using ATSBeaters, I landed 3 interviews at top tech firms."</p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20"></div>
+                  <div>
+                    <p className="font-bold text-sm">Alex Chen</p>
+                    <p className="text-[10px] opacity-60 font-bold uppercase">Senior Product Designer</p>
+                  </div>
                 </div>
-             </div>
+              </div>
+              <i className="fas fa-quote-right absolute -right-4 -bottom-4 text-[100px] text-white/10"></i>
+            </div>
+            <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
+              <h4 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-[10px] border-b border-slate-50 pb-3">Community Stats</h4>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-bold text-slate-500">Users Hired</span>
+                  <span className="text-lg font-black text-slate-800">14.2k+</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-bold text-slate-500">Avg Score Boost</span>
+                  <span className="text-lg font-black text-emerald-500">+28 pts</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-bold text-slate-500">Time Saved/User</span>
+                  <span className="text-lg font-black text-indigo-600">6.4 hrs</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     );
   };
-
   const renderHelp = () => (
-    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4">
+    <div className="max-w-4xl mx-auto space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4">
       <div className="text-center">
-        <h2 className="text-4xl font-black text-slate-900 mb-4">Support Center</h2>
-        <p className="text-slate-500 text-lg">Master the art of beating the ATS bots.</p>
+        <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">Support Center</h2>
+        <p className="text-slate-500 text-base md:text-lg">Master the art of beating the ATS bots.</p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="font-black text-xl mb-6 text-indigo-600 uppercase tracking-tight">Frequently Asked Questions</h3>
-          <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm">
+          <h3 className="font-black text-xl mb-5 text-indigo-600 uppercase tracking-tight">Frequently Asked Questions</h3>
+          <div className="space-y-5">
             <div>
-              <h4 className="font-bold text-slate-800 mb-2">What is an ATS score?</h4>
-              <p className="text-sm text-slate-500 leading-relaxed">It's a compliance rating based on how well an automated system can parse your text and match it to specific job requirements.</p>
+              <h4 className="font-bold text-slate-800 mb-1">What is an ATS score?</h4>
+              <p className="text-sm text-slate-500 leading-relaxed">It's a compliance rating based on how well an automated system can parse your text and match it to job requirements.</p>
             </div>
             <div>
-              <h4 className="font-bold text-slate-800 mb-2">How many resumes can I analyze?</h4>
+              <h4 className="font-bold text-slate-800 mb-1">How many resumes can I analyze?</h4>
               <p className="text-sm text-slate-500 leading-relaxed">Free users get 1 analysis per month. Pro and Package tiers have unlimited monthly credits.</p>
             </div>
             <div>
-              <h4 className="font-bold text-slate-800 mb-2">Can I export my results?</h4>
-              <p className="text-sm text-slate-500 leading-relaxed">Yes! You can export to PDF, JSON, or copy the content directly to your clipboard for use in external editors.</p>
+              <h4 className="font-bold text-slate-800 mb-1">Can I export my results?</h4>
+              <p className="text-sm text-slate-500 leading-relaxed">Yes! You can export to PDF, JSON, or copy the content directly to your clipboard.</p>
             </div>
           </div>
         </section>
-
-        <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="font-black text-xl mb-6 text-slate-800 uppercase tracking-tight">Contact Support</h3>
+        <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm">
+          <h3 className="font-black text-xl mb-5 text-slate-800 uppercase tracking-tight">Contact Support</h3>
           <form className="space-y-4">
             <input type="text" placeholder="Subject" className="w-full p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm font-medium focus:ring-4 focus:ring-indigo-100 outline-none" />
-            <textarea placeholder="Describe your issue..." className="w-full h-32 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm font-medium focus:ring-4 focus:ring-indigo-100 outline-none resize-none"></textarea>
+            <textarea placeholder="Describe your issue..." className="w-full h-28 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm font-medium focus:ring-4 focus:ring-indigo-100 outline-none resize-none"></textarea>
             <button className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition-all">Send Message</button>
           </form>
-          <div className="mt-8 flex items-center justify-center space-x-6 text-slate-400">
-             <a href="#" className="hover:text-indigo-600 transition-colors"><i className="fab fa-twitter text-xl"></i></a>
-             <a href="#" className="hover:text-indigo-600 transition-colors"><i className="fab fa-linkedin text-xl"></i></a>
-             <a href="#" className="hover:text-indigo-600 transition-colors"><i className="fas fa-envelope text-xl"></i></a>
+          <div className="mt-6 flex items-center justify-center space-x-6 text-slate-400">
+            <a href="#" className="hover:text-indigo-600 transition-colors"><i className="fab fa-twitter text-xl"></i></a>
+            <a href="#" className="hover:text-indigo-600 transition-colors"><i className="fab fa-linkedin text-xl"></i></a>
+            <a href="#" className="hover:text-indigo-600 transition-colors"><i className="fas fa-envelope text-xl"></i></a>
           </div>
         </section>
       </div>
     </div>
   );
-
   const renderInput = () => {
     if (activeTab === AppTab.DASHBOARD) return renderDashboard();
     if (activeTab === AppTab.PHOTO_EDITOR) return <PhotoEditor />;
@@ -351,47 +340,35 @@ const App: React.FC = () => {
       [AppTab.SUMMARY]: { title: "Identity Generator", label1: "Background/Highlights", placeholder1: "Summary of your career...", btn: "Design Summary" },
       [AppTab.SKILLS]: { title: "Skills Architect", label1: "Raw Skills", placeholder1: "Paste your unstructured skills...", btn: "Rebuild Section" },
     };
-
     const config = configs[activeTab];
     return (
-      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <div className="text-center mb-8">
-           <h2 className="text-4xl font-black text-slate-900 mb-2">{config.title}</h2>
-           <p className="text-slate-500 font-medium">Expert AI optimization for your professional documents.</p>
+      <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="text-center mb-4 md:mb-8">
+          <h2 className="text-2xl md:text-4xl font-black text-slate-900 mb-2">{config.title}</h2>
+          <p className="text-slate-500 font-medium text-sm md:text-base">Expert AI optimization for your professional documents.</p>
         </div>
-
-        <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100">
-          <div className="flex justify-between items-center mb-6">
-             <label className="text-xs font-black text-slate-300 uppercase tracking-widest">{config.label1}</label>
-             <div className="flex space-x-2">
-            <button onClick={() => setInput1(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Tech</button>
+        <div className="bg-white p-5 md:p-10 rounded-[2rem] shadow-xl border border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+            <label className="text-xs font-black text-slate-300 uppercase tracking-widest">{config.label1}</label>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setInput1(SAMPLES.tech)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Tech</button>
               <button onClick={() => setInput1(SAMPLES.sales)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Sales</button>
-              <button onClick={() => setInput1(SAMPLES.ops)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Ops</button>             </div>
+              <button onClick={() => setInput1(SAMPLES.ops)} className="text-[10px] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black">Sample: Ops</button>
+            </div>
           </div>
-          <div
-            className="mb-4"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files[0];
-              if (file) handleFileUpload(file);
-            }}
-          >
+          <div className="mb-4" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file) handleFileUpload(file); }}>
             {uploadedFileName ? (
-              <div className="flex items-center justify-between px-5 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl mb-3">
-                <div className="flex items-center space-x-3">
-                  <i className="fas fa-file-check text-emerald-500"></i>
-                  <span className="text-sm font-bold text-emerald-700 truncate max-w-xs">{uploadedFileName}</span>
+              <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl mb-3">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <i className="fas fa-file-check text-emerald-500 flex-shrink-0"></i>
+                  <span className="text-sm font-bold text-emerald-700 truncate">{uploadedFileName}</span>
                 </div>
-                <button
-                  onClick={() => { setUploadedFileName(null); setInput1(''); }}
-                  className="text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors"
-                >
+                <button onClick={() => { setUploadedFileName(null); setInput1(''); }} className="text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors flex-shrink-0 ml-2">
                   <i className="fas fa-times mr-1"></i>Remove
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all mb-3 group">
+              <label className="flex flex-col items-center justify-center w-full h-20 md:h-24 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all mb-3 group">
                 {isParsingFile ? (
                   <div className="flex items-center space-x-2 text-indigo-400">
                     <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
@@ -399,62 +376,43 @@ const App: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <i className="fas fa-cloud-arrow-up text-2xl text-slate-300 group-hover:text-indigo-400 transition-colors mb-1"></i>
-                    <span className="text-xs font-black text-slate-400 group-hover:text-indigo-500 transition-colors">Drop resume here or <span className="text-indigo-500">click to browse</span></span>
+                    <i className="fas fa-cloud-arrow-up text-xl md:text-2xl text-slate-300 group-hover:text-indigo-400 transition-colors mb-1"></i>
+                    <span className="text-xs font-black text-slate-400 group-hover:text-indigo-500 transition-colors text-center px-2">Drop resume or <span className="text-indigo-500">click to browse</span></span>
                     <span className="text-[10px] text-slate-300 mt-0.5">PDF, DOCX, or TXT</span>
                   </>
                 )}
-                <input
-                  type="file"
-                  accept=".pdf,.docx,.txt"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFileUpload(file);
-                    e.target.value = '';
-                  }}
-                />
+                <input type="file" accept=".pdf,.docx,.txt" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFileUpload(file); e.target.value = ''; }} />
               </label>
             )}
           </div>
-          <textarea 
-            value={input1} onChange={(e) => setInput1(e.target.value)}
-            placeholder={config.placeholder1}
-            className="w-full h-64 p-6 bg-slate-50/50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-100 outline-none text-sm font-medium text-slate-700 leading-relaxed resize-none transition-all placeholder:text-slate-300"
-          />
+          <textarea value={input1} onChange={(e) => setInput1(e.target.value)} placeholder={config.placeholder1} className="w-full h-48 md:h-64 p-4 md:p-6 bg-slate-50/50 border border-slate-100 rounded-2xl focus:ring-4 md:focus:ring-8 focus:ring-indigo-100 outline-none text-sm font-medium text-slate-700 leading-relaxed resize-none transition-all placeholder:text-slate-300" />
           {config.label2 && (
-            <div className="mt-8">
-              <label className="block text-xs font-black text-slate-300 uppercase tracking-widest mb-4">{config.label2}</label>
-              <textarea 
-                value={input2} onChange={(e) => setInput2(e.target.value)}
-                placeholder={config.placeholder2}
-                className="w-full h-40 p-6 bg-slate-50/50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-100 outline-none text-sm font-medium text-slate-700 leading-relaxed resize-none transition-all placeholder:text-slate-300"
-              />
+            <div className="mt-5 md:mt-8">
+              <label className="block text-xs font-black text-slate-300 uppercase tracking-widest mb-3">{config.label2}</label>
+              <textarea value={input2} onChange={(e) => setInput2(e.target.value)} placeholder={config.placeholder2} className="w-full h-36 md:h-40 p-4 md:p-6 bg-slate-50/50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none text-sm font-medium text-slate-700 leading-relaxed resize-none transition-all placeholder:text-slate-300" />
             </div>
           )}
-          <button 
-            onClick={runService} disabled={!input1.trim() || state.isAnalyzing}
-            className={`mt-10 w-full py-5 rounded-2xl font-black text-xl shadow-2xl transition-all flex items-center justify-center space-x-3 ${input1.trim() && !state.isAnalyzing ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'}`}
+          <button onClick={runService} disabled={!input1.trim() || state.isAnalyzing}
+            className={"mt-6 md:mt-10 w-full py-4 md:py-5 rounded-2xl font-black text-lg md:text-xl shadow-2xl transition-all flex items-center justify-center space-x-3 " + (input1.trim() && !state.isAnalyzing ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none')}
           >
             {state.isAnalyzing ? <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : <i className="fas fa-microchip"></i>}
             <span>{state.isAnalyzing ? 'Decoding Career Path...' : config.btn}</span>
           </button>
         </div>
-
         {state.result && activeTab !== AppTab.ANALYZER && (
-           <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 animate-in fade-in slide-in-from-bottom-4">
-            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-6">
-              <h3 className="text-2xl font-black text-slate-900">Optimization Result</h3>
-              <div className="flex space-x-3">
-                 <button onClick={() => { navigator.clipboard.writeText(typeof state.result === 'string' ? state.result : JSON.stringify(state.result)); alert("Copied to clipboard!"); }} className="text-xs font-black text-indigo-600 px-5 py-2.5 rounded-xl border border-indigo-100 hover:bg-indigo-50 flex items-center transition-all active:scale-95">
-                    <i className="fas fa-copy mr-2"></i> Copy
-                 </button>
-                 <button onClick={handleSave} className="text-xs font-black text-emerald-600 px-5 py-2.5 rounded-xl border border-emerald-100 hover:bg-emerald-50 flex items-center transition-all active:scale-95">
-                    <i className="fas fa-floppy-disk mr-2"></i> Save Profile
-                 </button>
+          <div className="bg-white p-5 md:p-10 rounded-[2rem] shadow-sm border border-slate-100 animate-in fade-in slide-in-from-bottom-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 border-b border-slate-50 pb-5">
+              <h3 className="text-xl md:text-2xl font-black text-slate-900">Optimization Result</h3>
+              <div className="flex space-x-2">
+                <button onClick={() => { navigator.clipboard.writeText(typeof state.result === 'string' ? state.result : JSON.stringify(state.result)); alert("Copied to clipboard!"); }} className="text-xs font-black text-indigo-600 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-50 flex items-center transition-all active:scale-95">
+                  <i className="fas fa-copy mr-2"></i> Copy
+                </button>
+                <button onClick={handleSave} className="text-xs font-black text-emerald-600 px-4 py-2 rounded-xl border border-emerald-100 hover:bg-emerald-50 flex items-center transition-all active:scale-95">
+                  <i className="fas fa-floppy-disk mr-2"></i> Save
+                </button>
               </div>
             </div>
-            <div className="prose max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed font-medium text-base p-2">
+            <div className="prose max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed font-medium text-sm md:text-base p-2">
               {typeof state.result === 'string' ? state.result : JSON.stringify(state.result, null, 2)}
             </div>
           </div>
@@ -462,38 +420,36 @@ const App: React.FC = () => {
       </div>
     );
   };
-
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
       {authMode && renderAuth()}
+
       {showPricing && (
-        <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl p-12 relative max-h-[90vh] overflow-y-auto no-scrollbar border border-slate-100">
-            <button onClick={() => setShowPricing(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-500 transition-colors"><i className="fas fa-times text-2xl"></i></button>
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-black text-slate-900 mb-3">Professional Plans</h2>
-              <p className="text-slate-500 font-medium text-lg">Invest in your career. Get hired 2x faster.</p>
+        <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 md:p-4">
+          <div className="bg-white w-full max-w-4xl rounded-[2rem] md:rounded-[3rem] shadow-2xl p-6 md:p-12 relative max-h-[92vh] overflow-y-auto no-scrollbar border border-slate-100">
+            <button onClick={() => setShowPricing(false)} className="absolute top-5 right-5 md:top-8 md:right-8 text-slate-300 hover:text-slate-500 transition-colors z-10"><i className="fas fa-times text-xl md:text-2xl"></i></button>
+            <div className="text-center mb-8 md:mb-12">
+              <h2 className="text-2xl md:text-4xl font-black text-slate-900 mb-2">Professional Plans</h2>
+              <p className="text-slate-500 font-medium text-base md:text-lg">Invest in your career. Get hired 2x faster.</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
               {[
                 { tier: 'free', price: '$0', title: 'Free Tier', features: ['1 Audit/mo', 'Basic Suggestions', 'Email Alerts'], btn: 'Current', current: user?.tier === 'free' },
                 { tier: 'pro', price: '$12', title: 'Pro Pack', features: ['Unlimited Audits', 'Full Rewrites', 'Keyword Insights', 'PDF Exports'], btn: 'Upgrade', popular: true, current: user?.tier === 'pro' },
                 { tier: 'package', price: '$24', title: 'Career Suite', features: ['Everything in Pro', 'Cover Letter Gen', 'Photo AI Edit', 'Direct Support'], btn: 'Go Ultimate', current: user?.tier === 'package' },
               ].map((plan, i) => (
-                <div key={i} className={`p-8 rounded-[2rem] border-2 transition-all ${plan.popular ? 'border-indigo-600 scale-105 shadow-2xl shadow-indigo-600/10' : 'border-slate-100'} flex flex-col relative`}>
-                  {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full tracking-widest shadow-lg">HIGHLY RECOMMENDED</span>}
-                  <h3 className="text-xl font-black text-slate-900 mb-2">{plan.title}</h3>
-                  <div className="flex items-baseline mb-6">
-                    <span className="text-4xl font-black text-slate-900">{plan.price}</span>
+                <div key={i} className={"p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-2 transition-all " + (plan.popular ? 'border-indigo-600 md:scale-105 shadow-2xl shadow-indigo-600/10' : 'border-slate-100') + " flex flex-col relative"}>
+                  {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full tracking-widest shadow-lg">BEST VALUE</span>}
+                  <h3 className="text-lg md:text-xl font-black text-slate-900 mb-2">{plan.title}</h3>
+                  <div className="flex items-baseline mb-5">
+                    <span className="text-3xl md:text-4xl font-black text-slate-900">{plan.price}</span>
                     <span className="text-sm font-bold text-slate-400 ml-1">/mo</span>
                   </div>
-                  <ul className="space-y-4 mb-10 flex-1">
-                    {plan.features.map(f => <li key={f} className="text-sm font-medium text-slate-600 flex items-center"><i className="fas fa-circle-check text-emerald-500 mr-3"></i> {f}</li>)}
+                  <ul className="space-y-3 mb-6 flex-1">
+                    {plan.features.map(f => <li key={f} className="text-sm font-medium text-slate-600 flex items-center"><i className="fas fa-circle-check text-emerald-500 mr-3 flex-shrink-0"></i> {f}</li>)}
                   </ul>
-                  <button 
-                    onClick={() => { if (plan.tier !== 'free') { setUser(auth.upgradeTier(plan.tier as any)); setShowPricing(false); } }}
-                    className={`w-full py-4 rounded-2xl font-black text-sm transition-all ${plan.current ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : plan.popular ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/10' : 'bg-slate-900 text-white hover:bg-black'}`}
-                  >
+                  <button onClick={() => { if (plan.tier !== 'free') { setUser(auth.upgradeTier(plan.tier as any)); setShowPricing(false); } }}
+                    className={"w-full py-3.5 rounded-xl font-black text-sm transition-all " + (plan.current ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : plan.popular ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/10' : 'bg-slate-900 text-white hover:bg-black')}>
                     {plan.current ? 'Active Now' : plan.btn}
                   </button>
                 </div>
@@ -502,24 +458,22 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      
-      {/* Dynamic Navigation */}
-      <header className="sticky top-0 z-50 glass border-b border-slate-100 px-6 md:px-12 py-5 flex items-center justify-between no-print">
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab(user ? AppTab.DASHBOARD : AppTab.ANALYZER)}>
-          <div className="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-600/20">
-            <i className="fas fa-ghost text-xl"></i>
-          </div>
-          <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-900">ATSBEATERS</h1>
-        </div>
 
-        <div className="flex items-center space-x-6">
+      {/* Header */}
+      <header className="sticky top-0 z-50 glass border-b border-slate-100 px-4 md:px-12 py-4 md:py-5 flex items-center justify-between no-print">
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab(user ? AppTab.DASHBOARD : AppTab.ANALYZER)}>
+          <div className="w-10 h-10 md:w-11 md:h-11 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-600/20">
+            <i className="fas fa-ghost text-lg md:text-xl"></i>
+          </div>
+          <h1 className="text-xl md:text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-900">ATSBEATERS</h1>
+        </div>
+        <div className="flex items-center space-x-3 md:space-x-6">
           <nav className="hidden lg:flex items-center space-x-8 mr-6 border-r border-slate-100 pr-8">
-             <button onClick={() => setShowPricing(true)} className="text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">Pricing</button>
-             <button onClick={() => setActiveTab(AppTab.HELP)} className="text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">FAQ</button>
+            <button onClick={() => setShowPricing(true)} className="text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">Pricing</button>
+            <button onClick={() => setActiveTab(AppTab.HELP)} className="text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">FAQ</button>
           </nav>
-          
           {user && (
-            <div className="flex items-center space-x-5">
+            <div className="flex items-center space-x-3 md:space-x-5">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-black text-slate-900">{user.name}</p>
                 <div className="flex items-center justify-end space-x-1">
@@ -527,80 +481,94 @@ const App: React.FC = () => {
                   <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{user.tier} PASS</span>
                 </div>
               </div>
-              <button onClick={() => { auth.logout(); setUser(null); setActiveTab(AppTab.ANALYZER); }} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95 shadow-sm border border-slate-100">
-                <i className="fas fa-power-off"></i>
+              <button onClick={() => { auth.logout(); setUser(null); setActiveTab(AppTab.ANALYZER); }} className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95 shadow-sm border border-slate-100">
+                <i className="fas fa-power-off text-sm md:text-base"></i>
               </button>
             </div>
           )}
-
-          {/* Mobile Menu Toggle */}
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600">
-             <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars-staggered'}`}></i>
+          {/* Mobile Menu Toggle - only show on md, hidden on lg+ */}
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600">
+            <i className={"fas " + (isMobileMenuOpen ? 'fa-times' : 'fa-bars-staggered')}></i>
           </button>
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Mobile Navigation Sidebar (Overlay) */}
+        {/* Mobile Full Sidebar Overlay (md only, not shown on small) */}
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
-            <aside className="w-72 h-full bg-white p-8 animate-in slide-in-from-left duration-300" onClick={e => e.stopPropagation()}>
-               <div className="space-y-2">
-                 {menuItems.map(item => (
-                   <button key={item.id} onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); handleReset(); }} className={`w-full flex items-center px-5 py-4 text-sm font-black rounded-2xl transition-all ${activeTab === item.id ? 'bg-indigo-50 text-indigo-600 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
-                     <i className={`fas ${item.icon} w-6 mr-4`}></i> {item.label}
-                   </button>
-                 ))}
-               </div>
+            <aside className="w-72 h-full bg-white p-6 animate-in slide-in-from-left duration-300 overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="space-y-1">
+                {menuItems.map(item => (
+                  <button key={item.id} onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); handleReset(); }}
+                    className={"w-full flex items-center px-4 py-3.5 text-sm font-black rounded-2xl transition-all " + (activeTab === item.id ? 'bg-indigo-50 text-indigo-600 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600')}>
+                    <i className={"fas " + item.icon + " w-6 mr-4"}></i>
+                    {item.label}
+                    {item.id === AppTab.PHOTO_EDITOR && <span className="ml-auto px-2 py-0.5 bg-amber-100 text-amber-600 text-[8px] rounded-md font-black">NEW</span>}
+                  </button>
+                ))}
+              </div>
             </aside>
           </div>
         )}
 
         {/* Desktop Sidebar */}
         <aside className="w-72 bg-white border-r border-slate-100 p-6 hidden md:block overflow-y-auto no-scrollbar no-print">
-          <div className="mb-10 px-4">
+          <div className="mb-8 px-4">
             <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Platform Core</h2>
           </div>
-          <nav className="space-y-2">
+          <nav className="space-y-1">
             {menuItems.map((item) => (
-              <button
-                key={item.id} onClick={() => { setActiveTab(item.id); handleReset(); }}
-                className={`w-full flex items-center px-5 py-4 text-sm font-black rounded-2xl transition-all group ${activeTab === item.id ? 'bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100/50' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-700'}`}
-              >
-                <i className={`fas ${item.icon} w-6 mr-4 text-xl group-hover:scale-110 transition-transform`}></i> 
+              <button key={item.id} onClick={() => { setActiveTab(item.id); handleReset(); }}
+                className={"w-full flex items-center px-5 py-4 text-sm font-black rounded-2xl transition-all group " + (activeTab === item.id ? 'bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100/50' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-700')}>
+                <i className={"fas " + item.icon + " w-6 mr-4 text-xl group-hover:scale-110 transition-transform"}></i>
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.id === AppTab.PHOTO_EDITOR && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-600 text-[8px] rounded-md font-black">NEW</span>}
               </button>
             ))}
           </nav>
-          
-          <div className="mt-16 p-8 rounded-[2rem] bg-slate-900 text-white relative overflow-hidden group">
-             <div className="relative z-10">
-                <p className="text-[10px] font-black tracking-widest text-indigo-400 uppercase mb-3">Community</p>
-                <h4 className="font-black text-base mb-6 leading-tight">Join the hiring revolution.</h4>
-                <button className="text-xs font-black text-slate-900 bg-white hover:bg-indigo-50 w-full py-3.5 rounded-xl transition-all active:scale-95">Invite Friends</button>
-             </div>
-             <i className="fas fa-users absolute -right-6 -bottom-6 text-[100px] text-white/10 group-hover:scale-110 transition-transform"></i>
+          <div className="mt-12 p-6 rounded-[2rem] bg-slate-900 text-white relative overflow-hidden group">
+            <div className="relative z-10">
+              <p className="text-[10px] font-black tracking-widest text-indigo-400 uppercase mb-2">Community</p>
+              <h4 className="font-black text-base mb-5 leading-tight">Join the hiring revolution.</h4>
+              <button className="text-xs font-black text-slate-900 bg-white hover:bg-indigo-50 w-full py-3 rounded-xl transition-all active:scale-95">Invite Friends</button>
+            </div>
+            <i className="fas fa-users absolute -right-6 -bottom-6 text-[100px] text-white/10 group-hover:scale-110 transition-transform"></i>
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-12 scroll-smooth">
-          <div className="max-w-6xl mx-auto pb-24">
+        {/* Main content - add bottom padding on mobile for bottom nav */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-12 scroll-smooth pb-24 md:pb-12">
+          <div className="max-w-6xl mx-auto">
             {activeTab === AppTab.ANALYZER && state.result ? (
               <AnalysisDashboard result={state.result} onReset={handleReset} onSave={handleSave} />
             ) : renderInput()}
           </div>
         </main>
       </div>
-      
-      <footer className="py-8 border-t border-slate-100 bg-white no-print">
-        <div className="max-w-7xl mx-auto px-10 flex flex-col md:flex-row items-center justify-between text-slate-400 text-xs font-bold">
-          <div className="flex items-center space-x-6 mb-6 md:mb-0">
-             <span className="text-slate-600">ATSBeaters AI © 2024</span>
-             <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-             <span>Trusted by 20,000+ Professionals</span>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-100 no-print">
+        <div className="flex items-center justify-around px-2 py-2 safe-area-bottom">
+          {mobileNavItems.map(item => (
+            <button key={item.id} onClick={() => { setActiveTab(item.id); handleReset(); setIsMobileMenuOpen(false); }}
+              className={"flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all min-w-0 flex-1 " + (activeTab === item.id ? 'text-indigo-600' : 'text-slate-400')}>
+              <i className={"fas " + item.icon + " text-lg mb-0.5"}></i>
+              <span className={"text-[10px] font-black " + (activeTab === item.id ? 'text-indigo-600' : 'text-slate-400')}>{item.label}</span>
+              {activeTab === item.id && <div className="absolute bottom-0 w-8 h-0.5 bg-indigo-600 rounded-full hidden"></div>}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <footer className="py-6 md:py-8 border-t border-slate-100 bg-white no-print mb-0 hidden md:block">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between text-slate-400 text-xs font-bold gap-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-slate-600">ATSBeaters AI © 2024</span>
+            <span className="w-1 h-1 bg-slate-200 rounded-full hidden md:block"></span>
+            <span className="hidden md:block">Trusted by 20,000+ Professionals</span>
           </div>
-          <div className="flex space-x-10 uppercase tracking-widest">
+          <div className="flex space-x-6 md:space-x-10 uppercase tracking-widest">
             <a href="#" className="hover:text-indigo-600 transition-colors">Privacy</a>
             <a href="#" className="hover:text-indigo-600 transition-colors">Terms</a>
             <a href="#" className="hover:text-indigo-600 transition-colors">Career Blog</a>
