@@ -8,8 +8,8 @@ import AnalysisDashboard from './components/AnalysisDashboard';
 import PhotoEditor from './components/PhotoEditor';
 
 // Gumroad Payment URLs - update these with your actual product URLs
-const GUMROAD_PRO_URL = 'https://atsbeaters.gumroad.com/l/pro';
-const GUMROAD_PACKAGE_URL = 'https://atsbeaters.gumroad.com/l/career-suite';
+const GUMROAD_PRO_URL = 'https://noahbarmash.gumroad.com/l/zeeawh';
+const GUMROAD_PACKAGE_URL = 'https://noahbarmash.gumroad.com/l/cpbvb';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
