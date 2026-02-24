@@ -18,6 +18,11 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onSave }) => {
     if (score >= 50) return 'bg-amber-500';
     return 'bg-rose-500';
   };
+  const getScoreLabel = (score: number) => {
+    if (score >= 80) return { label: 'Excellent', icon: 'fa-trophy' };
+    if (score >= 50) return { label: 'Needs Work', icon: 'fa-wrench' };
+    return { label: 'At Risk', icon: 'fa-triangle-exclamation' };
+  };
   const downloadReport = (format: 'json' | 'txt') => {
     const content = format === 'json'
       ? JSON.stringify(result, null, 2)
@@ -67,6 +72,10 @@ ${result.callbackImprovement}
           <div className="absolute top-0 left-0 w-full h-1 opacity-20 bg-current"></div>
           <span className="text-xs font-black uppercase tracking-widest mb-2 opacity-70">ATS Compliance Score</span>
           <div className="text-6xl md:text-7xl font-black mb-3 group-hover:scale-110 transition-transform">{result.score}<span className="text-xl md:text-2xl opacity-50">/100</span></div>
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest opacity-70 mt-1">
+                <i className={`fas ${getScoreLabel(result.score).icon}`}></i>
+                <span>{getScoreLabel(result.score).label}</span>
+              </div>
           <div className="w-full h-3 bg-gray-200/50 rounded-full mt-2 overflow-hidden border border-gray-100">
             <div className={`h-full ${getBarColor(result.score)} transition-all duration-1000 shadow-sm`} style={{ width: `${result.score}%` }} />
           </div>
@@ -103,6 +112,37 @@ ${result.callbackImprovement}
         </div>
       </div>
 
+      {/* Strengths + Weaknesses */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+        <section className="bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100">
+          <h3 className="text-base md:text-lg font-black mb-4 md:mb-6 flex items-center text-emerald-700">
+            <span className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mr-3 flex-shrink-0"><i className="fas fa-circle-check text-xs md:text-sm"></i></span>
+            What's Working
+          </h3>
+          <ul className="space-y-2.5">
+            {result.strengths.map((s, idx) => (
+              <li key={idx} className="flex items-start text-sm text-slate-700 bg-emerald-50/40 p-3 rounded-xl border border-emerald-100/60">
+                <i className="fas fa-check text-emerald-500 mt-0.5 mr-3 flex-shrink-0"></i>
+                <span className="font-medium">{s}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section className="bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100">
+          <h3 className="text-base md:text-lg font-black mb-4 md:mb-6 flex items-center text-amber-600">
+            <span className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mr-3 flex-shrink-0"><i className="fas fa-circle-exclamation text-xs md:text-sm"></i></span>
+            Areas to Improve
+          </h3>
+          <ul className="space-y-2.5">
+            {result.weaknesses.map((w, idx) => (
+              <li key={idx} className="flex items-start text-sm text-slate-700 bg-amber-50/40 p-3 rounded-xl border border-amber-100/60">
+                <i className="fas fa-arrow-up-right-dots text-amber-500 mt-0.5 mr-3 flex-shrink-0"></i>
+                <span className="font-medium">{w}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
       {/* Keywords + Formatting */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
         <section className="bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100">
@@ -166,8 +206,8 @@ ${result.callbackImprovement}
           <h3 className="text-2xl md:text-3xl font-black mb-2 md:mb-3">Maximize Your Potential</h3>
           <p className="text-indigo-100 text-base md:text-lg opacity-90 max-w-md">Our Premium Package users see an average of 3x more interview requests in 30 days.</p>
         </div>
-        <button className="w-full md:w-auto px-8 md:px-10 py-4 md:py-5 bg-white text-indigo-600 rounded-2xl font-black shadow-xl hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all whitespace-nowrap relative z-10">
-          Unlock Pro Features
+        <button onClick={() => window.open('https://noahbarmash.gumroad.com/l/zeeawh', '_blank')} className="w-full md:w-auto px-8 md:px-10 py-4 md:py-5 bg-white text-indigo-600 rounded-2xl font-black shadow-xl hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all whitespace-nowrap relative z-10">
+          <i className="fas fa-lock-open mr-2"></i> Unlock Pro Features
         </button>
       </div>
     </div>
