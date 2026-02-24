@@ -7,6 +7,10 @@ import { SAMPLES } from './components/Samples';
 import AnalysisDashboard from './components/AnalysisDashboard';
 import PhotoEditor from './components/PhotoEditor';
 
+// Gumroad Payment URLs - update these with your actual product URLs
+const GUMROAD_PRO_URL = 'https://atsbeaters.gumroad.com/l/pro';
+const GUMROAD_PACKAGE_URL = 'https://atsbeaters.gumroad.com/l/career-suite';
+
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const [activeTab, setActiveTab] = useState<AppTab>(user ? AppTab.DASHBOARD : AppTab.ANALYZER);
@@ -491,7 +495,7 @@ const App: React.FC = () => {
                     {plan.features.map(f => <li key={f} className="text-sm font-medium text-slate-600 flex items-center"><i className="fas fa-circle-check text-emerald-500 mr-3"></i> {f}</li>)}
                   </ul>
                   <button 
-                    onClick={() => { if (plan.tier !== 'free') { setUser(auth.upgradeTier(plan.tier as any)); setShowPricing(false); } }}
+                    onClick={() => { if (plan.tier !== 'free') { const urls: Record<string, string> = { pro: GUMROAD_PRO_URL, package: GUMROAD_PACKAGE_URL }; if (urls[plan.tier]) window.open(urls[plan.tier], '_blank'); } }}
                     className={`w-full py-4 rounded-2xl font-black text-sm transition-all ${plan.current ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : plan.popular ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/10' : 'bg-slate-900 text-white hover:bg-black'}`}
                   >
                     {plan.current ? 'Active Now' : plan.btn}
