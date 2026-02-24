@@ -21,14 +21,36 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onSave }) => {
   const downloadReport = (format: 'json' | 'txt') => {
     const content = format === 'json'
       ? JSON.stringify(result, null, 2)
-      : `ATSBeaters Report
+      : `ATSBeaters Analysis Report
+============================
 Score: ${result.score}/100
 Field: ${result.suggestedJobField}
+Date: ${new Date().toLocaleDateString()}
 
-Missing Keywords: ${result.missingKeywords.join(', ')}
+STRENGTHS
+---------
+${result.strengths.map(function(s, i){ return (i+1) + ". " + s; }).join(String.fromCharCode(10))}
 
-Formatting Issues:
-${result.formattingIssues.join(String.fromCharCode(10))}`;
+AREAS FOR IMPROVEMENT
+---------------------
+${result.weaknesses.map(function(s, i){ return (i+1) + ". " + s; }).join(String.fromCharCode(10))}
+
+MISSING KEYWORDS
+----------------
+${result.missingKeywords.join(", ")}
+
+FORMATTING ISSUES
+-----------------
+${result.formattingIssues.join(String.fromCharCode(10))}
+
+POWER SENTENCE REWRITES
+-----------------------
+${result.powerSentenceRewrites.map(function(r, i){ return "BEFORE: " + r.original + String.fromCharCode(10) + "AFTER:  " + r.improved; }).join(String.fromCharCode(10) + String.fromCharCode(10))}
+
+CALLBACK IMPROVEMENT TIP
+------------------------
+${result.callbackImprovement}
+`;
     const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
