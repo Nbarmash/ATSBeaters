@@ -22,6 +22,8 @@ const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState('all');
+  const [expandedHistoryId, setExpandedHistoryId] = useState(null);
 
   const runService = async () => {
         // Guest user access enabled - free tier testing allowed
@@ -42,6 +44,9 @@ const App: React.FC = () => {
         case AppTab.SKILLS: result = await api.optimizeSkills(input1); break;
       }
       setState({ isAnalyzing: false, result, error: null });
+      // Task 7: Auto-save every analysis to history
+      auth.saveToHistory({ type: activeTab, input: input1, result });
+      setUser(auth.getCurrentUser());
     if (user && user.tier === 'free') {
       const updatedUser = { ...user, credits: Math.max(0, user.credits - 1) };
       localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
@@ -179,124 +184,214 @@ const App: React.FC = () => {
   );
 
   const renderDashboard = () => {
-    if (!user) return null;
-    return (
-      <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4">
-        {/* Analytics Hero */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 rounded-full"></div>
-            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Member Level</p>
-            <p className="text-3xl font-black text-slate-900 capitalize">{user.tier}</p>
-            <button onClick={() => setShowPricing(true)} className="mt-4 text-xs font-bold text-indigo-600 hover:underline">Manage Subscription →</button>
+  if (!user) return null;
+
+  // Task 7: Filter and sort history
+  const FILTER_OPTIONS = [
+    { key: 'all', label: 'All' },
+    { key: 'analyzer', label: 'Analysis' },
+    { key: 'rewrite', label: 'Rewrite' },
+    { key: 'cover_letter', label: 'Cover Letter' },
+    { key: 'keywords', label: 'Keywords' },
+  ];
+
+  const filteredHistory = historyFilter === 'all'
+    ? user.history
+    : user.history.filter(h => h.type === historyFilter);
+
+  // Task 7: Build score trend data from analyzer history
+  const scoreTrend = user.history
+    .filter(h => h.type === 'analyzer' && h.result && h.result.score)
+    .slice(0, 10)
+    .reverse();
+
+  return (
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4">
+      {/* Analytics Hero */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 rounded-full"></div>
+          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Member Level</p>
+          <p className="text-3xl font-black text-slate-900 capitalize">{user.tier}</p>
+          <button onClick={() => setShowPricing(true)} className="mt-4 text-xs font-bold text-indigo-600 hover:underline">Manage Subscription →</button>
+        </div>
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Analyses</p>
+          <p className="text-3xl font-black text-slate-900">{user.history.length}</p>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-5 overflow-hidden">
+            <div className="h-full bg-indigo-400 rounded-full" style={{width: Math.min(100, user.history.length * 10) + '%'}}></div>
           </div>
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Insights</p>
-            <p className="text-3xl font-black text-slate-900">{user.history.length}</p>
-            <div className="w-full h-1.5 bg-slate-100 rounded-full mt-5 overflow-hidden">
-               <div className="h-full bg-slate-300 w-3/4"></div>
-            </div>
+        </div>
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Best ATS Score</p>
+          {scoreTrend.length > 0 ? (
+            <>
+              <p className="text-3xl font-black text-emerald-500">{Math.max(...scoreTrend.map(h => h.result.score))}%</p>
+              <p className="text-[10px] font-bold text-slate-400 mt-4 italic">Peak resume score</p>
+            </>
+          ) : (
+            <>
+              <p className="text-3xl font-black text-slate-300">—</p>
+              <p className="text-[10px] font-bold text-slate-400 mt-4 italic">Run an analysis to track</p>
+            </>
+          )}
+        </div>
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+          <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2">Credits Remaining</p>
+          <p className="text-3xl font-black text-slate-900">{user.credits}</p>
+          <button onClick={() => setShowPricing(true)} className="mt-4 text-xs font-bold text-amber-600 hover:underline">Purchase More →</button>
+        </div>
+      </section>
+
+      {scoreTrend.length >= 2 && (
+        <section className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8">
+          <h3 className="font-black text-2xl text-slate-900 mb-6">ATS Score Trend</h3>
+          <div className="flex items-end space-x-3 h-32">
+            {scoreTrend.map((h, i) => (
+              <div key={h.id} className="flex-1 flex flex-col items-center group">
+                <span className="text-[10px] font-black text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity mb-1">{h.result.score}%</span>
+                <div
+                  className="w-full rounded-t-xl transition-all duration-500"
+                  style={{
+                    height: (h.result.score / 100 * 96) + 'px',
+                    background: h.result.score >= 80 ? '#10b981' : h.result.score >= 60 ? '#6366f1' : '#f59e0b'
+                  }}
+                ></div>
+                <span className="text-[9px] font-bold text-slate-300 mt-2">{new Date(h.timestamp).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+              </div>
+            ))}
           </div>
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Success Velocity</p>
-            <p className="text-3xl font-black text-emerald-500">+42%</p>
-            <p className="text-[10px] font-bold text-slate-400 mt-4 italic">Above platform average</p>
-          </div>
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2">Credits Remaining</p>
-            <p className="text-3xl font-black text-slate-900">{user.credits}</p>
-            <button className="mt-4 text-xs font-bold text-amber-600 hover:underline">Purchase More →</button>
+          <div className="flex items-center justify-end space-x-4 mt-4">
+            <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-[10px] font-bold text-slate-400">80%+ Excellent</span></div>
+            <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded-full bg-indigo-500"></div><span className="text-[10px] font-bold text-slate-400">60-79% Good</span></div>
+            <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded-full bg-amber-500"></div><span className="text-[10px] font-bold text-slate-400">Below 60</span></div>
           </div>
         </section>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* History List */}
-          <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+          <div className="p-8 border-b border-slate-50">
+            <div className="flex justify-between items-center mb-5">
               <h3 className="font-black text-2xl text-slate-900">Career History</h3>
-              <div className="flex space-x-2">
-                 <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"><i className="fas fa-filter"></i></button>
-                 <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"><i className="fas fa-arrow-down-wide-short"></i></button>
-              </div>
+              <span className="text-xs font-black text-slate-300 uppercase tracking-widest">{filteredHistory.length} records</span>
             </div>
-            <div className="divide-y divide-slate-50 flex-1">
-              {user.history.length > 0 ? user.history.map(h => (
-                <div key={h.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all cursor-pointer group" onClick={() => { setActiveTab(h.type); setInput1(h.input); setState({ isAnalyzing: false, result: h.result, error: null }); }}>
+            <div className="flex space-x-2 overflow-x-auto pb-1 no-scrollbar">
+              {FILTER_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setHistoryFilter(opt.key)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap ${historyFilter === opt.key ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="divide-y divide-slate-50 flex-1 overflow-y-auto max-h-[500px]">
+            {filteredHistory.length > 0 ? filteredHistory.map(h => (
+              <div key={h.id} className="group">
+                <div
+                  className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all cursor-pointer"
+                  onClick={() => setExpandedHistoryId(expandedHistoryId === h.id ? null : h.id)}
+                >
                   <div className="flex items-center space-x-5">
                     <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">
                       <i className={`fas ${menuItems.find(m => m.id === h.type)?.icon} text-xl`}></i>
                     </div>
                     <div>
                       <p className="text-lg font-black text-slate-800">{menuItems.find(m => m.id === h.type)?.label}</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">{new Date(h.timestamp).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">{new Date(h.timestamp).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-4">
                     {h.result?.score && (
                       <div className="text-right">
-                        <p className="text-2xl font-black text-indigo-600">{h.result.score}%</p>
-                        <p className="text-[10px] font-black text-slate-300 uppercase">Match Score</p>
+                        <p className={`text-2xl font-black ${h.result.score >= 80 ? 'text-emerald-500' : h.result.score >= 60 ? 'text-indigo-600' : 'text-amber-500'}`}>{h.result.score}%</p>
+                        <p className="text-[10px] font-black text-slate-300 uppercase">ATS Score</p>
                       </div>
                     )}
-                    <i className="fas fa-chevron-right text-slate-200 group-hover:text-indigo-400 transition-colors"></i>
+                    <i className={`fas fa-chevron-${expandedHistoryId === h.id ? 'up' : 'down'} text-slate-200 group-hover:text-indigo-400 transition-colors`}></i>
                   </div>
                 </div>
-              )) : (
-                <div className="p-20 text-center text-slate-300">
-                  <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i className="fas fa-folder-open text-4xl opacity-40"></i>
+                {expandedHistoryId === h.id && (
+                  <div className="px-6 pb-6 bg-slate-50/50 border-t border-slate-100">
+                    <div className="pt-4 flex space-x-3 mb-4">
+                      <button
+                        onClick={() => { setActiveTab(h.type); setInput1(h.input); setState({ isAnalyzing: false, result: h.result, error: null }); setExpandedHistoryId(null); }}
+                        className="text-xs font-black text-indigo-600 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-50 flex items-center transition-all active:scale-95"
+                      >
+                        <i className="fas fa-eye mr-2"></i> View Full Result
+                      </button>
+                      <button
+                        onClick={() => { setActiveTab(h.type); setInput1(h.input); setState({ isAnalyzing: false, result: null, error: null }); setExpandedHistoryId(null); }}
+                        className="text-xs font-black text-slate-600 px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 flex items-center transition-all active:scale-95"
+                      >
+                        <i className="fas fa-redo mr-2"></i> Re-run Analysis
+                      </button>
+                    </div>
+                    {h.result?.suggestedJobField && (
+                      <p className="text-xs font-bold text-slate-500">Job Field: <span className="text-indigo-600">{h.result.suggestedJobField}</span></p>
+                    )}
+                    {h.input && (
+                      <p className="text-xs font-medium text-slate-400 mt-2 line-clamp-2 italic">"{h.input.substring(0, 120)}..."</p>
+                    )}
                   </div>
-                  <h4 className="text-xl font-bold text-slate-400">Your archive is empty</h4>
-                  <p className="text-sm mt-2 max-w-xs mx-auto">Start optimizing your resume to see your progress here.</p>
+                )}
+              </div>
+            )) : (
+              <div className="p-20 text-center text-slate-300">
+                <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <i className="fas fa-folder-open text-4xl opacity-40"></i>
                 </div>
-              )}
-            </div>
+                <h4 className="text-xl font-bold text-slate-400">{historyFilter === 'all' ? 'Your archive is empty' : 'No ' + historyFilter + ' records yet'}</h4>
+                <p className="text-sm mt-2 max-w-xs mx-auto">Start optimizing your resume to see your progress here.</p>
+              </div>
+            )}
           </div>
-
-          {/* Social Proof & Stats Sidebar */}
-          <div className="space-y-8">
-             <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/30">
-                <div className="relative z-10">
-                   <div className="flex items-center space-x-2 mb-6">
-                      {[1,2,3,4,5].map(s => <i key={s} className="fas fa-star text-amber-400 text-xs"></i>)}
-                      <span className="text-[10px] font-black tracking-widest opacity-70">VERIFIED USER</span>
-                   </div>
-                   <p className="text-xl font-bold leading-relaxed mb-6">"Within 48 hours of using ATSBeaters, I landed 3 interviews at top tech firms. The keyword extractor is a cheat code."</p>
-                   <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-white/20"></div>
-                      <div>
-                        <p className="font-bold text-sm">Alex Chen</p>
-                        <p className="text-[10px] opacity-60 font-bold uppercase">Senior Product Designer</p>
-                      </div>
-                   </div>
+        </div>
+        <div className="space-y-8">
+          <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/30">
+            <div className="relative z-10">
+              <div className="flex items-center space-x-2 mb-6">
+                {[1,2,3,4,5].map(s => <i key={s} className="fas fa-star text-amber-400 text-xs"></i>)}
+                <span className="text-[10px] font-black tracking-widest opacity-70">VERIFIED USER</span>
+              </div>
+              <p className="text-xl font-bold leading-relaxed mb-6">"Within 48 hours of using ATSBeaters, I landed 3 interviews at top tech firms. The keyword extractor is a cheat code."</p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-white/20"></div>
+                <div>
+                  <p className="font-bold text-sm">Alex Chen</p>
+                  <p className="text-[10px] opacity-60 font-bold uppercase">Senior Product Designer</p>
                 </div>
-                <i className="fas fa-quote-right absolute -right-4 -bottom-4 text-[120px] text-white/10"></i>
-             </div>
-
-             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-                <h4 className="font-black text-slate-900 mb-6 uppercase tracking-widest text-[10px] border-b border-slate-50 pb-4">Community Stats</h4>
-                <div className="space-y-6">
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Users Hired</span>
-                      <span className="text-lg font-black text-slate-800">14.2k+</span>
-                   </div>
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Avg Score Boost</span>
-                      <span className="text-lg font-black text-emerald-500">+28 pts</span>
-                   </div>
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Time Saved/User</span>
-                      <span className="text-lg font-black text-indigo-600">6.4 hrs</span>
-                   </div>
-                </div>
-             </div>
+              </div>
+            </div>
+            <i className="fas fa-quote-right absolute -right-4 -bottom-4 text-[120px] text-white/10"></i>
+          </div>
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+            <h4 className="font-black text-slate-900 mb-6 uppercase tracking-widest text-[10px] border-b border-slate-50 pb-4">Community Stats</h4>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-slate-500">Users Hired</span>
+                <span className="text-lg font-black text-slate-800">14.2k+</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-slate-500">Avg Score Boost</span>
+                <span className="text-lg font-black text-emerald-500">+28 pts</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-slate-500">Time Saved/User</span>
+                <span className="text-lg font-black text-indigo-600">6.4 hrs</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
-  const renderHelp = () => (
+const renderHelp = () => (
     <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4">
       <div className="text-center">
         <h2 className="text-4xl font-black text-slate-900 mb-4">Support Center</h2>
