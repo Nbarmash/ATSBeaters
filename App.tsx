@@ -24,6 +24,9 @@ const App: React.FC = () => {
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('all');
   const [expandedHistoryId, setExpandedHistoryId] = useState(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const runService = async () => {
         // Guest user access enabled - free tier testing allowed
@@ -47,6 +50,8 @@ const App: React.FC = () => {
       // Task 7: Auto-save every analysis to history
       auth.saveToHistory({ type: activeTab, input: input1, result });
       setUser(auth.getCurrentUser());
+      // Phase 2: Auto-send email report for registered users
+      sendEmailReport(result, activeTab);
     if (user && user.tier === 'free') {
       const updatedUser = { ...user, credits: Math.max(0, user.credits - 1) };
       localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
@@ -120,6 +125,61 @@ const App: React.FC = () => {
     setUploadedFileName(null);
     setState({ isAnalyzing: false, result: null, error: null });
   }, []);
+
+  // Phase 2: Send email report via /api/send-report
+  const sendEmailReport = async (result: any, serviceType: string) => {
+    if (!user || !user.email || user.email.includes('guest') || user.email.includes('trial')) return;
+    setIsSendingEmail(true);
+    setEmailSent(false);
+    try {
+      const response = await fetch('/api/send-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          name: user.name,
+          serviceType,
+          result,
+        }),
+      });
+      if (response.ok) {
+        setEmailSent(true);
+        setTimeout(() => setEmailSent(false), 5000);
+      }
+    } catch (err) {
+      console.error('Email send failed:', err);
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  // Phase 2: Download formatted TXT report via /api/generate-docx
+  const downloadReport = async (result: any, serviceType: string) => {
+    setIsDownloading(true);
+    try {
+      const response = await fetch('/api/generate-docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ result, serviceType, input: input1 }),
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const filenameMatch = disposition.match(/filename="([^"]+)"/);
+        const filename = filenameMatch ? filenameMatch[1] : 'ATSBeaters_Report.txt';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('Download failed:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -551,6 +611,16 @@ const renderHelp = () => (
                  <button onClick={handleSave} className="text-xs font-black text-emerald-600 px-5 py-2.5 rounded-xl border border-emerald-100 hover:bg-emerald-50 flex items-center transition-all active:scale-95">
                     <i className="fas fa-floppy-disk mr-2"></i> Save Profile
                  </button>
+              <button onClick={() => downloadReport(state.result, activeTab)} disabled={isDownloading} className="text-xs font-black text-slate-600 px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center transition-all active:scale-95 disabled:opacity-50">
+                {isDownloading ? <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2"></div> : <i className="fas fa-file-arrow-down mr-2"></i>}
+                Download
+              </button>
+              {user && !user.email.includes('guest') && (
+                <button onClick={() => sendEmailReport(state.result, activeTab)} disabled={isSendingEmail || emailSent} className={`text-xs font-black px-5 py-2.5 rounded-xl border flex items-center transition-all active:scale-95 disabled:opacity-50 ${emailSent ? 'text-emerald-600 border-emerald-100 bg-emerald-50' : 'text-violet-600 border-violet-100 hover:bg-violet-50'}`}>
+                  {isSendingEmail ? <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mr-2"></div> : <i className={`fas ${emailSent ? 'fa-check' : 'fa-paper-plane'} mr-2`}></i>}
+                  {emailSent ? 'Sent!' : 'Email Me'}
+                </button>
+              )}
               </div>
             </div>
             <div className="prose max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed font-medium text-base p-2">
