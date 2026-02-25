@@ -148,7 +148,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         personalizations: [{ to: [{ email, name: name || 'User' }] }],
-        from: { email: 'support@atsbeaters.com', name: 'ATSBeaters' },
+        from: { email: 'noahbarmash23@gmail.com', name: 'ATSBeaters' },
         reply_to: { email: 'support@atsbeaters.com' },
         subject: score != null
           ? `ATSBeaters: Your Resume Score is ${score}% (${scoreLabel})`
