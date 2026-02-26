@@ -655,13 +655,13 @@ const renderHelp = () => (
             <div className="space-y-4">
               {typeof state.result === 'string' && (
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                  {(state.result as string).split('\n').map((line: string, i: number) => (
-                    line.trim() === '' ? <div key={i} className="h-2" /> :
-                    line.startsWith('## ') ? <h2 key={i} className="text-xl font-bold text-slate-900 mt-4 mb-2">{line.slice(3)}</h2> :
-                    line.startsWith('# ') ? <h3 key={i} className="text-lg font-bold text-slate-800 mt-3 mb-1">{line.slice(2)}</h3> :
-                    (line.startsWith('- ') || line.startsWith('* ')) ? <div key={i} className="flex items-start gap-2 py-0.5"><span className="text-indigo-500 mt-1 shrink-0">•</span><span className="text-slate-700 leading-relaxed">{line.slice(2)}</span></div> :
-                    <p key={i} className="text-slate-700 leading-relaxed">{line}</p>
-                  ))}
+                  {(state.result as string).split('\n').map((line: string, i: number) => {
+                    if (line.trim() === '') return <div key={i} className="h-2" />;
+                    if (line.startsWith('## ')) return <h2 key={i} className="text-xl font-bold text-slate-900 mt-4 mb-2">{line.slice(3)}</h2>;
+                    if (line.startsWith('# ')) return <h3 key={i} className="text-lg font-bold text-slate-800 mt-3 mb-1">{line.slice(2)}</h3>;
+                    if (line.startsWith('- ') || line.startsWith('* ')) return <div key={i} className="flex items-start gap-2 py-0.5"><span className="text-indigo-500 mt-1 shrink-0">•</span><span className="text-slate-700 leading-relaxed">{line.slice(2)}</span></div>;
+                    return <p key={i} className="text-slate-700 leading-relaxed">{line}</p>;
+                  })}
                 </div>
               )}
               {typeof state.result === 'object' && state.result !== null && !Array.isArray(state.result) && (
@@ -682,17 +682,21 @@ const renderHelp = () => (
                   {(state.result as Array<Record<string, string>>).map((item, i: number) => (
                     <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                       <div className="flex items-start gap-3">
-                        <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Original</p><p className="text-slate-600 text-sm">{item.original || ''}</p></div>
-                        <div className="text-indigo-400 mt-4 shrink-0">→</div>
-                        <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">Enhanced</p><p className="text-slate-900 font-medium text-sm">{item.quantified || item.improved || ''}</p></div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Original</p>
+                          <p className="text-slate-600 text-sm">{item.original || ''}</p>
+                        </div>
+                        <div className="text-indigo-400 mt-4 shrink-0">{'->'}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">Enhanced</p>
+                          <p className="text-slate-900 font-medium text-sm">{item.quantified || item.improved || ''}</p>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-        )}
-      </div>
     );
   };
 
