@@ -55,11 +55,9 @@ const App: React.FC = () => {
       setUser(auth.getCurrentUser());
       // Phase 2: Auto-send email report for registered users
       sendEmailReport(result, activeTab);
-    if (user && user.tier === 'free') {
-      const updatedUser = { ...user, credits: Math.max(0, user.credits - 1) };
-      localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-    }
+          // Task 12: Deduct credit via authService
+          const updatedUser = auth.deductCredit();
+          if (updatedUser) setUser(updatedUser);
     } catch (err: any) {
       setState({ isAnalyzing: false, result: null, error: err.message || 'Service failed' });
     }
