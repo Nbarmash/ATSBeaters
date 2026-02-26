@@ -27,6 +27,9 @@ const App: React.FC = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [licenseKey, setLicenseKey] = useState('');
+  const [licenseStatus, setLicenseStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [licenseMessage, setLicenseMessage] = useState('');
 
   const runService = async () => {
         // Guest user access enabled - free tier testing allowed
@@ -127,7 +130,35 @@ const App: React.FC = () => {
   }, []);
 
   // Phase 2: Send email report via /api/send-report
-  const sendEmailReport = async (result: any, serviceType: string) => {
+  const redeemLicense = async () => {
+  if (!licenseKey.trim()) return;
+  setLicenseStatus('loading');
+  setLicenseMessage('');
+  try {
+    const res = await fetch('/api/verify-license', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseKey: licenseKey.trim() }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      const updatedUser = { ...user, tier: data.tier, credits: data.credits };
+      localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setLicenseStatus('success');
+      setLicenseMessage('License activated! Welcome to Pro.');
+      setTimeout(() => setShowPricing(false), 2000);
+    } else {
+      setLicenseStatus('error');
+      setLicenseMessage(data.error || 'Invalid license key. Please try again.');
+    }
+  } catch (err) {
+    setLicenseStatus('error');
+    setLicenseMessage('Failed to verify. Please check your connection.');
+  }
+};
+
+const sendEmailReport = async (result: any, serviceType: string) => {
     if (!user || !user.email || user.email.includes('guest') || user.email.includes('trial')) return;
     setIsSendingEmail(true);
     setEmailSent(false);
@@ -668,6 +699,31 @@ const renderHelp = () => (
                 </div>
               ))}
             </div>
+          {/* License Key Redemption */}
+          <div className="mt-6 border-t border-slate-100 pt-6">
+            <h4 className="text-sm font-bold text-slate-700 mb-3 text-center">Already have a license key?</h4>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={licenseKey}
+                onChange={(e) => setLicenseKey(e.target.value)}
+                placeholder="Enter your Gumroad license key"
+                className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-100 outline-none font-medium text-slate-700 placeholder:text-slate-300"
+              />
+              <button
+                onClick={redeemLicense}
+                disabled={licenseStatus === 'loading' || !licenseKey.trim()}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {licenseStatus === 'loading' ? '...' : 'Redeem'}
+              </button>
+            </div>
+            {licenseMessage && (
+              <p className={`mt-2 text-xs font-medium text-center ${licenseStatus === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>
+                {licenseMessage}
+              </p>
+            )}
+          </div>
           </div>
         </div>
       )}
