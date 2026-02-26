@@ -14,7 +14,7 @@ export const getGuestUser = (): User => {
           email: 'guest@trial.local',
           name: 'Guest User',
           tier: 'free',
-          credits: 1,
+          credits: 3,
           history: [],
           joinedAt: new Date()
     };
@@ -31,7 +31,7 @@ export const login = (email: string, name: string): User => {
     email,
     name,
     tier: 'free',
-    credits: 1,
+    credits: 3,
     history: [],
     joinedAt: Date.now()
   };
@@ -63,6 +63,14 @@ export const upgradeTier = (tier: 'pro' | 'package') => {
   if (!user) return;
   user.tier = tier;
   user.credits = tier === 'pro' ? 999 : 9999;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  return user;
+};
+
+export const deductCredit = (): User | null => {
+  const user = getCurrentUser();
+  if (!user || user.tier !== 'free') return user;
+  user.credits = Math.max(0, user.credits - 1);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
   return user;
 };
