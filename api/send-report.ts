@@ -82,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ATSBeaters <onboarding@resend.dev>',
+        from: 'ATSBeaters <support@atsbeaters.com>',
         to: [email],
         reply_to: 'noahbarmash23@gmail.com',
         subject: score != null
