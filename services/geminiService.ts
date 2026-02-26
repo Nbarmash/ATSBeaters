@@ -81,8 +81,7 @@ export const rewriteFullResume = async (content: string, analysis?: string): Pro
     ${analysis ? `Use this analysis context: ${analysis}` : ''}
     
     Resume Content:
-    ${content}`,h
-  });
+    ${content}`,  });
   return response.text || '';
 };
 
