@@ -655,7 +655,8 @@ const renderHelp = () => (
             <div className="prose max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed font-medium text-base p-2">
               {typeof state.result === 'string' ? state.result : JSON.stringify(state.result, null, 2)}
             </div>
-    );
+          </div>
+        )}
   };
 
   return (
