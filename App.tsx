@@ -653,51 +653,44 @@ const renderHelp = () => (
               </div>
             </div>
             <div className="space-y-4">
-              {/* Text-based results */}
               {typeof state.result === 'string' && (
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                  {state.result.split('\n').map((line: string, i: number) => (
+                  {(state.result as string).split('\n').map((line: string, i: number) => (
                     line.trim() === '' ? <div key={i} className="h-2" /> :
-                    line.startsWith('##') ? <h2 key={i} className="text-xl font-bold text-slate-900 mt-4 mb-2">{line.replace(/^##\s*/, '')}</h2> :
-                    line.startsWith('#') ? <h3 key={i} className="text-lg font-bold text-slate-800 mt-3 mb-1">{line.replace(/^#\s*/, '')}</h3> :
-                    line.startsWith('- ') || line.startsWith('• ') ? <div key={i} className="flex items-start gap-2 py-0.5"><span className="text-indigo-500 mt-1">•</span><span className="text-slate-700 leading-relaxed">{line.replace(/^[-•]\s*/, '')}</span></div> :
-                    line.match(/^\d+\./) ? <div key={i} className="flex items-start gap-2 py-0.5"><span className="text-indigo-600 font-semibold min-w-[1.5rem]">{line.match(/^(\d+\.)/)?.[1]}</span><span className="text-slate-700 leading-relaxed">{line.replace(/^\d+\.\s*/, '')}</span></div> :
-                    line.startsWith('**') && line.endsWith('**') ? <p key={i} className="font-bold text-slate-900 mt-2">{line.replace(/\*\*/g, '')}</p> :
+                    line.startsWith('## ') ? <h2 key={i} className="text-xl font-bold text-slate-900 mt-4 mb-2">{line.slice(3)}</h2> :
+                    line.startsWith('# ') ? <h3 key={i} className="text-lg font-bold text-slate-800 mt-3 mb-1">{line.slice(2)}</h3> :
+                    (line.startsWith('- ') || line.startsWith('* ')) ? <div key={i} className="flex items-start gap-2 py-0.5"><span className="text-indigo-500 mt-1 shrink-0">•</span><span className="text-slate-700 leading-relaxed">{line.slice(2)}</span></div> :
                     <p key={i} className="text-slate-700 leading-relaxed">{line}</p>
                   ))}
                 </div>
               )}
-              {/* JSON-based results (keywords, ATS check, metrics) */}
               {typeof state.result === 'object' && state.result !== null && !Array.isArray(state.result) && (
                 <div className="grid grid-cols-1 gap-4">
                   {Object.entries(state.result as Record<string, unknown>).map(([key, value]) => (
                     <div key={key} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                       <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">{key.replace(/([A-Z])/g, ' $1').trim()}</h4>
-                      {Array.isArray(value) ? (
-                        <div className="flex flex-wrap gap-2">{(value as string[]).map((item: string, i: number) => <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium">{item}</span>)}</div>
-                      ) : (
-                        <p className="text-slate-700 font-semibold text-lg">{String(value)}</p>
-                      )}
+                      {Array.isArray(value)
+                        ? <div className="flex flex-wrap gap-2">{(value as string[]).map((v: string, i: number) => <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium">{String(v)}</span>)}</div>
+                        : <p className="text-slate-700 font-semibold text-lg">{String(value)}</p>
+                      }
                     </div>
                   ))}
                 </div>
               )}
-              {/* Array results (metrics builder) */}
-              {Array.isArray(state.result) && (
+              {Array.isArray(state.result) && (state.result as unknown[]).length > 0 && (
                 <div className="space-y-3">
-                  {(state.result as Array<{original: string; quantified?: string; improved?: string}>).map((item, i: number) => (
+                  {(state.result as Array<Record<string, string>>).map((item, i: number) => (
                     <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                       <div className="flex items-start gap-3">
-                        <div className="flex-1"><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Original</p><p className="text-slate-600 text-sm">{item.original}</p></div>
-                        <div className="text-indigo-400 mt-4">→</div>
-                        <div className="flex-1"><p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">Enhanced</p><p className="text-slate-900 font-medium text-sm">{item.quantified || item.improved}</p></div>
+                        <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Original</p><p className="text-slate-600 text-sm">{item.original || ''}</p></div>
+                        <div className="text-indigo-400 mt-4 shrink-0">→</div>
+                        <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">Enhanced</p><p className="text-slate-900 font-medium text-sm">{item.quantified || item.improved || ''}</p></div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
         )}
       </div>
     );
