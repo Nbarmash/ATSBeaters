@@ -33,7 +33,7 @@ const App: React.FC = () => {
 
   const runService = async () => {
         // Guest user access enabled - free tier testing allowed
-    if (user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
+    if (user && user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
 
     setState({ isAnalyzing: true, result: null, error: null });
     try {
