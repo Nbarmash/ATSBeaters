@@ -150,7 +150,7 @@ export const optimizeSkills = async (content: string): Promise<string> => {
 
 export const editProfessionalPhoto = async (base64Image: string, prompt: string): Promise<string> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-preview-image',
+    model: 'gemini-2.5-flash-image',
     contents: {
       parts: [
         { inlineData: { data: base64Image.split(',')[1], mimeType: 'image/png' } },
