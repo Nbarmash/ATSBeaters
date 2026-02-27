@@ -285,11 +285,11 @@ const sendEmailReport = async (result: any, serviceType: string) => {
   ];
 
   const filteredHistory = historyFilter === 'all'
-    ? user.history
-    : user.history.filter(h => h.type === historyFilter);
+    ? (user.history || [])
+    : (user.history || []).filter(h => h.type === historyFilter);
 
   // Task 7: Build score trend data from analyzer history
-  const scoreTrend = user.history
+  const scoreTrend = (user.history || [])
     .filter(h => h.type === 'analyzer' && h.result && h.result.score)
     .slice(0, 10)
     .reverse();
