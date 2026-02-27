@@ -33,9 +33,10 @@ const PhotoEditor: React.FC = () => {
     } catch (err: any) {
       setError((() => {
         const msg = String(err?.message || err?.toString() || '');
-        if (msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')) return 'AI image editing quota exceeded. This feature requires an upgraded Gemini API plan.';
-        if (msg.includes('404') || msg.includes('not found') || msg.includes('NOT_FOUND')) return 'AI image model unavailable. Please try again later.';
-        if (msg.includes('No image returned')) return 'The AI did not return an edited image. Please try a different prompt.';
+        if (msg.includes('503') || msg.includes('loading') || msg.includes('currently loading')) return 'AI model is warming up, please wait 20 seconds and try again.';
+        if (msg.includes('429') || msg.includes('quota') || msg.includes('rate limit')) return 'Too many requests. Please wait a moment and try again.';
+        if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('API key')) return 'AI service configuration error. Please contact support.';
+        if (msg.includes('No image returned')) return 'The AI did not return an edited image. Try a different prompt.';
         return 'AI image editing failed. Please try again.';
       })());
     } finally {
