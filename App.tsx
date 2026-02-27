@@ -306,9 +306,9 @@ const sendEmailReport = async (result: any, serviceType: string) => {
         </div>
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Analyses</p>
-          <p className="text-3xl font-black text-slate-900">{user.history.length}</p>
+          <p className="text-3xl font-black text-slate-900">{(user.history || []).length}</p>
           <div className="w-full h-1.5 bg-slate-100 rounded-full mt-5 overflow-hidden">
-            <div className="h-full bg-indigo-400 rounded-full" style={{width: Math.min(100, user.history.length * 10) + '%'}}></div>
+            <div className="h-full bg-indigo-400 rounded-full" style={{width: Math.min(100, (user.history || []).length * 10) + '%'}}></div>
           </div>
         </div>
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
