@@ -31,7 +31,12 @@ const PhotoEditor: React.FC = () => {
       const result = await editProfessionalPhoto(image, prompt);
       setEditedImage(result);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setError((() => {
+        const msg = err.message || '';
+        if (msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')) return 'AI image editing is temporarily unavailable due to API quota limits. Please try again later.';
+        if (msg.includes('No image returned')) return 'The AI did not return an edited image. Please try a different prompt.';
+        return 'Something went wrong. Please try again.';
+      })());
     } finally {
       setIsProcessing(false);
     }
