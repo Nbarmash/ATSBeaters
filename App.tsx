@@ -657,6 +657,8 @@ const renderHelp = () => (
             </div>
           </div>
         )}
+      </div>
+    );
   };
 
   return (
