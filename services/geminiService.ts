@@ -149,18 +149,40 @@ export const optimizeSkills = async (content: string): Promise<string> => {
 };
 
 export const editProfessionalPhoto = async (base64Image: string, prompt: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: {
-      parts: [
-        { inlineData: { data: base64Image.split(',')[1], mimeType: 'image/png' } },
-        { text: `Edit this professional headshot: ${prompt}.` }
-      ]
+  const hfKey = import.meta.env.VITE_HF_API_KEY;
+  if (!hfKey) throw new Error('HuggingFace API key not configured');
+
+  // Convert base64 to raw binary string for HuggingFace instruct-pix2pix
+  const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+  const byteChars = atob(base64Data);
+  const byteArr = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+
+  const response = await fetch(
+    'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${hfKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: base64Data,
+        parameters: { prompt: `Professional headshot edit: ${prompt}` }
+      }),
     }
-  });
-  // Iterating through all parts to find the image part as per guidelines
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+  );
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => response.statusText);
+    throw new Error(`${response.status}: ${errText}`);
   }
-  throw new Error("No image returned");
+
+  const resultBlob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(resultBlob);
+  });
 };
