@@ -152,21 +152,27 @@ export const editProfessionalPhoto = async (base64Image: string, prompt: string)
   const hfKey = import.meta.env.VITE_HF_API_KEY;
   if (!hfKey) throw new Error('HuggingFace API key not configured');
 
+  // Convert base64 data URL to binary Blob (HF Inference API expects binary for image input)
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+  const mimeType = base64Image.includes('data:') ? base64Image.split(';')[0].replace('data:', '') : 'image/jpeg';
+  const byteCharacters = atob(base64Data);
+  const byteArray = new Uint8Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteArray[i] = byteCharacters.charCodeAt(i);
+  }
+  const imageBlob = new Blob([byteArray], { type: mimeType });
 
   // Use HuggingFace router endpoint (CORS-enabled) with instruct-pix2pix
   const response = await fetch(
-    'https://router.huggingface.co/hf-inference/models/timbrooks/instruct-pix2pix',
+    `https://router.huggingface.co/hf-inference/models/timbrooks/instruct-pix2pix?prompt=${encodeURIComponent('Professional headshot: ' + prompt)}`,
     {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${hfKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': mimeType,
+        'x-wait-for-model': 'true',
       },
-      body: JSON.stringify({
-        inputs: base64Data,
-        parameters: { prompt: `Professional headshot enhancement: ${prompt}` }
-      }),
+      body: imageBlob,
     }
   );
 
