@@ -53,7 +53,7 @@ export const saveToHistory = (entry: Omit<HistoryEntry, 'id' | 'timestamp'>) => 
     timestamp: Date.now()
   };
   
-  user.history.unshift(fullEntry);
+  if (!user.history) user.history = [];    user.history.unshift(fullEntry);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
   return fullEntry;
 };
