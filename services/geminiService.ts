@@ -152,7 +152,7 @@ export const editProfessionalPhoto = async (base64Image: string, prompt: string)
     const mimeType = (base64Image.includes('data:') ? base64Image.split(';')[0].replace('data:', '') : 'image/jpeg') as any;
 
     const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash-preview-image-generation',
+          model: 'gemini-2.0-flash-exp-image-generation',
           contents: [
             {
                       role: 'user',
