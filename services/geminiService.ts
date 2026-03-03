@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, KeywordResult, ATSCompatibilityResult } from "../types";
 
@@ -6,186 +5,183 @@ import { AnalysisResult, KeywordResult, ATSCompatibilityResult } from "../types"
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 
 const RESUME_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    score: { type: Type.INTEGER },
-    formattingIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
-    missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-    powerSentenceRewrites: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          original: { type: Type.STRING },
-          improved: { type: Type.STRING }
-        },
-        required: ["original", "improved"]
-      }
+    type: Type.OBJECT,
+    properties: {
+          score: { type: Type.INTEGER },
+          formattingIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
+          missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+          powerSentenceRewrites: {
+                  type: Type.ARRAY,
+                  items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                        original: { type: Type.STRING },
+                                        improved: { type: Type.STRING }
+                            },
+                            required: ["original", "improved"]
+                  }
+          },
+          callbackImprovement: { type: Type.STRING },
+          strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+          weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
+          suggestedJobField: { type: Type.STRING }
     },
-    callbackImprovement: { type: Type.STRING },
-    strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-    weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
-    suggestedJobField: { type: Type.STRING }
-  },
-  required: ["score", "formattingIssues", "missingKeywords", "powerSentenceRewrites", "callbackImprovement", "strengths", "weaknesses", "suggestedJobField"]
+    required: ["score", "formattingIssues", "missingKeywords", "powerSentenceRewrites", "callbackImprovement", "strengths", "weaknesses", "suggestedJobField"]
 };
 
 const KEYWORD_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    hardSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
-    softSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
-    priorityKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-    industryTerms: { type: Type.ARRAY, items: { type: Type.STRING } }
-  },
-  required: ["hardSkills", "softSkills", "priorityKeywords", "industryTerms"]
+    type: Type.OBJECT,
+    properties: {
+          hardSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
+          softSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
+          priorityKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+          industryTerms: { type: Type.ARRAY, items: { type: Type.STRING } }
+    },
+    required: ["hardSkills", "softSkills", "priorityKeywords", "industryTerms"]
 };
 
 const ATS_CHECK_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    parseScore: { type: Type.INTEGER },
-    issues: { type: Type.ARRAY, items: { type: Type.STRING } },
-    structureRating: { type: Type.STRING },
-    fontCheck: { type: Type.STRING }
-  },
-  required: ["parseScore", "issues", "structureRating", "fontCheck"]
+    type: Type.OBJECT,
+    properties: {
+          parseScore: { type: Type.INTEGER },
+          issues: { type: Type.ARRAY, items: { type: Type.STRING } },
+          structureRating: { type: Type.STRING },
+          fontCheck: { type: Type.STRING }
+    },
+    required: ["parseScore", "issues", "structureRating", "fontCheck"]
 };
 
 const QUANTIFIER_SCHEMA = {
-  type: Type.ARRAY,
-  items: {
-    type: Type.OBJECT,
-    properties: {
-      original: { type: Type.STRING },
-      quantified: { type: Type.STRING }
-    },
-    required: ["original", "quantified"]
-  }
+    type: Type.ARRAY,
+    items: {
+          type: Type.OBJECT,
+          properties: {
+                  original: { type: Type.STRING },
+                  quantified: { type: Type.STRING }
+          },
+          required: ["original", "quantified"]
+    }
 };
 
 export const analyzeResume = async (content: string): Promise<AnalysisResult> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Analyze this resume for ATS compatibility: ${content}`,
-    config: { responseMimeType: "application/json", responseSchema: RESUME_SCHEMA }
-  });
-  return JSON.parse(response.text || '{}');
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Analyze this resume for ATS compatibility: ${content}`,
+          config: { responseMimeType: "application/json", responseSchema: RESUME_SCHEMA }
+    });
+    return JSON.parse(response.text || '{}');
 };
 
 export const rewriteFullResume = async (content: string, analysis?: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Rewrite the following resume to be highly ATS-optimized. 
-    Use strong action verbs, quantify achievements, and integrate relevant keywords.
-    ${analysis ? `Use this analysis context: ${analysis}` : ''}
-    
-    Resume Content:
-    ${content}`,  });
-  return response.text || '';
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Rewrite the following resume to be highly ATS-optimized. 
+          Use strong action verbs, quantify achievements, and integrate relevant keywords.
+          ${analysis ? `Use this analysis context: ${analysis}` : ''}
+
+          Resume Content:
+          ${content}`, });
+    return response.text || '';
 };
 
 export const quickRewrite = async (content: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Quickly optimize this resume content for ATS systems. Improve verbs and keywords. 
-    Content: ${content}`,
-  });
-  return response.text || '';
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Quickly optimize this resume content for ATS systems. Improve verbs and keywords. 
+          Content: ${content}`,
+    });
+    return response.text || '';
 };
 
 export const generateCoverLetter = async (resume: string, jobDesc: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Generate a professional cover letter based on this resume and job description.
-    Resume: ${resume}
-    Job Description: ${jobDesc}`,
-  });
-  return response.text || '';
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Generate a professional cover letter based on this resume and job description.
+          Resume: ${resume}
+          Job Description: ${jobDesc}`,
+    });
+    return response.text || '';
 };
 
 export const extractKeywords = async (jobDesc: string): Promise<KeywordResult> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Extract keywords and skills from this job description: ${jobDesc}`,
-    config: { responseMimeType: "application/json", responseSchema: KEYWORD_SCHEMA }
-  });
-  return JSON.parse(response.text || '{}');
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Extract keywords and skills from this job description: ${jobDesc}`,
+          config: { responseMimeType: "application/json", responseSchema: KEYWORD_SCHEMA }
+    });
+    return JSON.parse(response.text || '{}');
 };
 
 export const checkATSCompatibility = async (content: string): Promise<ATSCompatibilityResult> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Check if this resume formatting parses correctly in ATS (fonts, tables, characters): ${content}`,
-    config: { responseMimeType: "application/json", responseSchema: ATS_CHECK_SCHEMA }
-  });
-  return JSON.parse(response.text || '{}');
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Check if this resume formatting parses correctly in ATS (fonts, tables, characters): ${content}`,
+          config: { responseMimeType: "application/json", responseSchema: ATS_CHECK_SCHEMA }
+    });
+    return JSON.parse(response.text || '{}');
 };
 
 export const quantifyAchievements = async (bullets: string): Promise<any[]> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Transform these weak bullet points into strong achievement statements with metrics: ${bullets}`,
-    config: { responseMimeType: "application/json", responseSchema: QUANTIFIER_SCHEMA }
-  });
-  return JSON.parse(response.text || '[]');
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Transform these weak bullet points into strong achievement statements with metrics: ${bullets}`,
+          config: { responseMimeType: "application/json", responseSchema: QUANTIFIER_SCHEMA }
+    });
+    return JSON.parse(response.text || '[]');
 };
 
 export const generateSummary = async (content: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Create a compelling 3-4 sentence professional summary based on this resume: ${content}`,
-  });
-  return response.text || '';
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Create a compelling 3-4 sentence professional summary based on this resume: ${content}`,
+    });
+    return response.text || '';
 };
 
 export const optimizeSkills = async (content: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `Optimize this skills section for ATS relevance and readability. Categorize them logically.
-    Skills/Content: ${content}`,
-  });
-  return response.text || '';
+    const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Optimize this skills section for ATS relevance and readability. Categorize them logically.
+          Skills/Content: ${content}`,
+    });
+    return response.text || '';
 };
 
 export const editProfessionalPhoto = async (base64Image: string, prompt: string): Promise<string> => {
-  const hfKey = import.meta.env.VITE_HF_API_KEY;
-  if (!hfKey) throw new Error('HuggingFace API key not configured');
+    const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+    const mimeType = (base64Image.includes('data:') ? base64Image.split(';')[0].replace('data:', '') : 'image/jpeg') as any;
 
-  // Convert base64 data URL to binary Blob (HF Inference API expects binary for image input)
-  const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
-  const mimeType = base64Image.includes('data:') ? base64Image.split(';')[0].replace('data:', '') : 'image/jpeg';
-  const byteCharacters = atob(base64Data);
-  const byteArray = new Uint8Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteArray[i] = byteCharacters.charCodeAt(i);
-  }
-  const imageBlob = new Blob([byteArray], { type: mimeType });
+    const response = await ai.models.generateContent({
+          model: 'gemini-2.0-flash-preview-image-generation',
+          contents: [
+            {
+                      role: 'user',
+                      parts: [
+                        {
+                                      inlineData: {
+                                                      mimeType,
+                                                      data: base64Data,
+                                      },
+                        },
+                        {
+                                      text: `Edit this professional headshot photo: ${prompt}. Keep the person's face and identity intact. Improve lighting, background, and overall professional appearance.`,
+                        },
+                                ],
+            },
+                ],
+          config: {
+                  responseModalities: ['IMAGE', 'TEXT'],
+          },
+    });
 
-  // Use HuggingFace router endpoint (CORS-enabled) with instruct-pix2pix
-  const response = await fetch(
-    `https://router.huggingface.co/hf-inference/models/timbrooks/instruct-pix2pix?prompt=${encodeURIComponent('Professional headshot: ' + prompt)}`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${hfKey}`,
-        'Content-Type': mimeType,
-        'x-wait-for-model': 'true',
-      },
-      body: imageBlob,
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (!parts) throw new Error('No response from image generation model');
+
+    for (const part of parts) {
+          if (part.inlineData?.data) {
+                  return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          }
     }
-  );
 
-  if (!response.ok) {
-    const errText = await response.text().catch(() => response.statusText);
-    throw new Error(`${response.status}: ${errText}`);
-  }
-
-  const resultBlob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(resultBlob);
-  });
+    throw new Error('No image returned from Gemini image generation');
 };
