@@ -183,13 +183,13 @@ const sendEmailReport = async (result: any, serviceType: string) => {
   };
 
   // Phase 2: Download formatted TXT report via /api/generate-docx
-  const downloadReport = async (result: any, serviceType: string) => {
+  const downloadReport = async (result: any, serviceType: string, format: string = 'txt') => {
     setIsDownloading(true);
     try {
       const response = await fetch('/api/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ result, serviceType, input: input1 }),
+        body: JSON.stringify({ result, serviceType, input: input1, format }),
       });
       if (response.ok) {
         const blob = await response.blob();
