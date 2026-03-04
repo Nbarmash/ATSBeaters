@@ -53,8 +53,8 @@ const App: React.FC = () => {
       // Task 7: Auto-save every analysis to history
       auth.saveToHistory({ type: activeTab, input: input1, result });
       setUser(auth.getCurrentUser());
-      // Phase 2: Auto-send email report for registered users
-      sendEmailReport(result, activeTab);
+      
+      
           // Task 12: Deduct credit via authService
           const updatedUser = auth.deductCredit();
           if (updatedUser) setUser(updatedUser);
