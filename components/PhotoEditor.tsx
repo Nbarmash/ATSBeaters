@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { editProfessionalPhoto } from '../services/geminiService';
 
 const PhotoEditor: React.FC = () => {
@@ -7,7 +7,11 @@ const PhotoEditor: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -21,6 +25,52 @@ const PhotoEditor: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
+    setShowCamera(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err: any) {
+      const msg = String(err?.message || '');
+      if (msg.includes('Permission') || msg.includes('NotAllowed')) {
+        setCameraError('Camera permission denied. Please allow camera access and try again.');
+      } else if (msg.includes('NotFound') || msg.includes('DevicesNotFound')) {
+        setCameraError('No camera found on this device.');
+      } else {
+        setCameraError('Could not access camera. Please try uploading a photo instead.');
+      }
+    }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setShowCamera(false);
+    setCameraError(null);
+  }, []);
+
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
+      setImage(dataUrl);
+      setEditedImage(null);
+      setError(null);
+    }
+    stopCamera();
+  }, [stopCamera]);
 
   const handleEdit = async () => {
     if (!image || !prompt) return;
@@ -60,32 +110,85 @@ const PhotoEditor: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-4">
-          <div className="relative group aspect-square rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden">
-            {image ? (
-              <>
-                <img src={image} alt="Original" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => setImage(null)}
-                  className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <i className="fas fa-trash"></i>
-                </button>
-              </>
-            ) : (
-              <div className="text-center p-8 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                <i className="fas fa-user-circle text-5xl text-gray-300 mb-4"></i>
-                <p className="text-gray-500 font-medium">Click to upload headshot</p>
-                <p className="text-xs text-gray-400 mt-2">JPG, PNG up to 5MB</p>
+          {showCamera ? (
+            <div className="space-y-3">
+              <div className="relative aspect-square rounded-2xl border-2 border-indigo-300 overflow-hidden bg-black flex items-center justify-center">
+                {cameraError ? (
+                  <div className="text-center p-6">
+                    <i className="fas fa-camera-slash text-4xl text-red-400 mb-3"></i>
+                    <p className="text-red-400 text-sm font-medium">{cameraError}</p>
+                  </div>
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
-            )}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="image/*"
-            />
-          </div>
+              <div className="flex gap-2">
+                {!cameraError && (
+                  <button
+                    onClick={capturePhoto}
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-camera"></i> Take Photo
+                  </button>
+                )}
+                <button
+                  onClick={stopCamera}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-300 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <i className="fas fa-times"></i> Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="relative group aspect-square rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden">
+                {image ? (
+                  <>
+                    <img src={image} alt="Original" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setImage(null)}
+                      className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <i className="fas fa-trash"></i>
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-center p-8 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                    <i className="fas fa-user-circle text-5xl text-gray-300 mb-4"></i>
+                    <p className="text-gray-500 font-medium">Click to upload headshot</p>
+                    <p className="text-xs text-gray-400 mt-2">JPG, PNG up to 5MB</p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="image/*"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <i className="fas fa-upload"></i> Upload Photo
+                </button>
+                <button
+                  onClick={startCamera}
+                  className="flex-1 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-indigo-200"
+                >
+                  <i className="fas fa-camera"></i> Use Camera
+                </button>
+              </div>
+            </>
+          )}
           <p className="text-xs text-center text-gray-400">Original Photo</p>
         </div>
 
