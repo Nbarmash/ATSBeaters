@@ -6,6 +6,7 @@ import * as auth from './services/authService';
 import { SAMPLES } from './components/Samples';
 import AnalysisDashboard from './components/AnalysisDashboard';
 import PhotoEditor from './components/PhotoEditor';
+import ProtectedFeature from './components/ProtectedFeature';
 
 // Gumroad Payment URLs - update these with your actual product URLs
 const GUMROAD_PRO_URL = 'https://noahbarmash.gumroad.com/l/zeeawh';
@@ -32,7 +33,8 @@ const App: React.FC = () => {
   const [licenseMessage, setLicenseMessage] = useState('');
 
   const runService = async () => {
-        // Guest user access enabled - free tier testing allowed
+        // Block unauthenticated (guest) users from Pro/paid features
+        if (user && user.id.startsWith('guest_') && (activeTab === AppTab.COVER_LETTER || activeTab === AppTab.PHOTO_EDITOR)) { setAuthMode('login'); return; }
     if (user && user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
 
     setState({ isAnalyzing: true, result: null, error: null });
@@ -525,11 +527,13 @@ const renderHelp = () => (
 
   const renderInput = () => {
     if (activeTab === AppTab.DASHBOARD) return renderDashboard();
-    if (activeTab === AppTab.PHOTO_EDITOR) return <PhotoEditor />;
+    if (activeTab === AppTab.PHOTO_EDITOR) return <ProtectedFeature feature="headshot" user={user} onRequestLogin={() => setAuthMode('login')}><PhotoEditor /></ProtectedFeature>;
+        if (activeTab === AppTab.COVER_LETTER && (!user || user.id.startsWith('guest_') || (user.tier !== 'pro' && user.tier !== 'package'))) return <ProtectedFeature feature="cover_letter" user={user} onRequestLogin={() => setAuthMode('login')}><div /></ProtectedFeature>ProtectedFeature>;
     if (activeTab === AppTab.HELP) return renderHelp();
 
     const configs: Record<string, any> = {
       [AppTab.ANALYZER]: { title: "Resume Auditor", label1: "Paste Resume Content", placeholder1: "Paste your resume here (No contact info needed)...", btn: "Run Analysis" },
+      
       [AppTab.REWRITE]: { title: "ATS Overhaul", label1: "Paste Resume", placeholder1: "Your current resume...", label2: "Specific Goals or Job Desc", placeholder2: "Help us tailor the content...", btn: "Complete Rewrite" },
       [AppTab.QUICK_REWRITE]: { title: "Rapid Optimizer", label1: "Content Snippet", placeholder1: "Paste any section or the whole thing...", btn: "Flash Rewrite" },
       [AppTab.COVER_LETTER]: { title: "Cover Letter Sculptor", label1: "Your Resume", placeholder1: "Paste resume...", label2: "Job Description", placeholder2: "Paste job description...", btn: "Craft Letter" },
