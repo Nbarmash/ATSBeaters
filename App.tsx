@@ -528,7 +528,7 @@ const renderHelp = () => (
   const renderInput = () => {
     if (activeTab === AppTab.DASHBOARD) return renderDashboard();
     if (activeTab === AppTab.PHOTO_EDITOR) return <ProtectedFeature feature="headshot" user={user} onRequestLogin={() => setAuthMode('login')}><PhotoEditor /></ProtectedFeature>;
-        if (activeTab === AppTab.COVER_LETTER && (!user || user.id.startsWith('guest_') || (user.tier !== 'pro' && user.tier !== 'package'))) return <ProtectedFeature feature="cover_letter" user={user} onRequestLogin={() => setAuthMode('login')}><div /></ProtectedFeature>ProtectedFeature>;
+        if (activeTab === AppTab.COVER_LETTER && (!user || user.id.startsWith('guest_') || (user.tier !== 'pro' && user.tier !== 'package'))) return <ProtectedFeature feature="cover_letter" user={user} onRequestLogin={() => setAuthMode('login')}><div /></ProtectedFeature>;
     if (activeTab === AppTab.HELP) return renderHelp();
 
     const configs: Record<string, any> = {
