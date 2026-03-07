@@ -484,7 +484,177 @@ const sendEmailReport = async (result: any, serviceType: string) => {
   );
 };
 
-const renderHelp = () => (
+const renderLanding = () => (
+    <div className="min-h-screen bg-white">
+
+      {/* HERO */}
+      <section className="bg-white py-24 md:py-32 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-6">AI-Powered Resume Optimization</p>
+          <h1 className="text-4xl md:text-6xl font-black text-slate-900 leading-tight mb-2">Your Resume Isn't Failing You.</h1>
+          <h1 className="text-4xl md:text-6xl font-black text-indigo-600 leading-tight">The Algorithm Is.</h1>
+          <p className="text-lg md:text-xl text-slate-500 max-w-xl mx-auto mt-6 leading-relaxed">ATSBeaters uses AI to scan, rewrite, and optimize your resume so you land more interviews — not more rejections.</p>
+          <div className="flex flex-wrap gap-4 justify-center mt-10">
+            <button onClick={() => setAuthMode('signup')} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-base hover:bg-indigo-700 hover:-translate-y-0.5 transition-all shadow-xl shadow-indigo-600/20 active:scale-95">Scan My Resume Free</button>
+            <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 border-2 border-slate-200 text-slate-700 rounded-2xl font-black text-base hover:border-indigo-300 hover:text-indigo-600 transition-all active:scale-95">See How It Works</button>
+          </div>
+          <div className="flex flex-wrap gap-6 md:gap-10 justify-center mt-12">
+            {['20,000+ resumes optimized', 'ATS-compliant in minutes', 'No credit card required'].map(badge => (
+              <div key={badge} className="flex items-center gap-2"><i className="fas fa-circle-check text-indigo-500 text-sm"></i><span className="text-sm font-bold text-slate-500">{badge}</span></div>
+            ))}
+          </div>
+          <div className="mt-16 max-w-3xl mx-auto bg-white rounded-[2rem] shadow-2xl shadow-slate-200 border border-slate-100 p-8 text-left">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-sm font-black text-slate-400 uppercase tracking-widest">ATS Score</span>
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-black rounded-full">Optimized</span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs font-bold text-slate-400 mb-1"><span>Before</span><span>42%</span></div>
+                <div className="h-3 bg-slate-100 rounded-full"><div className="h-full w-[42%] bg-rose-400 rounded-full"></div></div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs font-bold text-slate-400 mb-1"><span>After</span><span>91%</span></div>
+                <div className="h-3 bg-slate-100 rounded-full"><div className="h-full w-[91%] bg-emerald-400 rounded-full transition-all duration-1000"></div></div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6 flex-wrap">
+              <span className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-black rounded-xl">+ Leadership</span>
+              <span className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-black rounded-xl">+ Project Management</span>
+              <span className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-black rounded-xl">+ Cross-functional</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="bg-slate-50 py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">How It Works</p>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900">From rejected to hired in 3 steps</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { num: '1', icon: 'fa-upload', title: 'Upload Your Resume', body: "Paste your resume or upload a PDF. We'll read it instantly." },
+              { num: '2', icon: 'fa-robot', title: 'AI Finds Every Gap', body: 'Our AI scores your resume against real ATS algorithms and flags every keyword, format, and content issue holding you back.' },
+              { num: '3', icon: 'fa-file-circle-check', title: 'Get Your Optimized Version', body: 'Download a fully rewritten, ATS-ready resume in minutes — tailored to the exact job you want.' },
+            ].map(step => (
+              <div key={step.num} className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-black mb-6">{step.num}</div>
+                <i className={`fas ${step.icon} text-3xl text-indigo-600 mb-4 block`}></i>
+                <h3 className="text-lg font-black text-slate-900 mb-2">{step.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES GRID */}
+      <section className="bg-white py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">What's Inside</p>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900">Every tool you need to get hired</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: 'fa-magnifying-glass-chart', prefix: 'fas', title: 'ATS Resume Scanner', desc: 'Get an instant ATS score and see exactly why recruiters are skipping your resume.', badge: 'FREE', bc: 'bg-emerald-50 text-emerald-600' },
+              { icon: 'fa-wand-magic-sparkles', prefix: 'fas', title: 'AI Resume Optimizer', desc: 'Rewrites your resume sections with AI — more impact, better keywords, less fluff.', badge: 'FREE (1 use)', bc: 'bg-emerald-50 text-emerald-600' },
+              { icon: 'fa-envelope-open-text', prefix: 'fas', title: 'Cover Letter Generator', desc: 'Generate a tailored cover letter for any job posting in seconds.', badge: 'PRO', bc: 'bg-indigo-50 text-indigo-600' },
+              { icon: 'fa-camera-retro', prefix: 'fas', title: 'AI Headshot Editor', desc: 'Turn any photo into a professional LinkedIn-ready headshot with AI.', badge: 'PRO', bc: 'bg-indigo-50 text-indigo-600' },
+              { icon: 'fa-comments', prefix: 'fas', title: 'Interview Prep AI', desc: 'Practice role-specific interview questions with instant AI feedback.', badge: 'PRO', bc: 'bg-indigo-50 text-indigo-600' },
+              { icon: 'fa-sack-dollar', prefix: 'fas', title: 'Salary Negotiation Tool', desc: 'Know your market value and get a script to negotiate a higher offer.', badge: 'CAREER SUITE', bc: 'bg-amber-50 text-amber-600' },
+              { icon: 'fa-linkedin', prefix: 'fab', title: 'LinkedIn Optimizer', desc: 'Optimize every section of your LinkedIn profile to attract recruiters.', badge: 'CAREER SUITE', bc: 'bg-amber-50 text-amber-600' },
+            ].map(feat => (
+              <div key={feat.title} className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-5">
+                  <i className={`${feat.prefix} ${feat.icon} text-indigo-600 text-xl`}></i>
+                </div>
+                <h3 className="text-base font-black text-slate-900 mb-2">{feat.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed mb-4 flex-1">{feat.desc}</p>
+                <span className={`self-start px-3 py-1 text-xs font-black rounded-full ${feat.bc}`}>{feat.badge}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF */}
+      <section className="bg-slate-900 py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-3 max-w-3xl mx-auto mb-20 text-center gap-8">
+            {[
+              { num: '20,000+', label: 'Resumes Optimized' },
+              { num: '94%', label: 'Report More Interviews' },
+              { num: '4.8★', label: 'Average Rating' },
+            ].map(stat => (
+              <div key={stat.label}>
+                <p className="text-5xl font-black text-white">{stat.num}</p>
+                <p className="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { quote: 'I went from zero callbacks to 3 interviews in two weeks. The ATS score feature showed me exactly what I was doing wrong.', name: 'Marcus T.', role: 'Operations Manager, Toronto' },
+              { quote: 'The cover letter generator alone is worth the Pro plan. It wrote better than anything I could have come up with myself.', name: 'Priya S.', role: 'Marketing Coordinator, Vancouver' },
+              { quote: 'Got a 91% ATS score on my first try after optimization. Had an interview request the same day I applied.', name: 'Derek W.', role: 'Field Construction Manager, Calgary' },
+            ].map(t => (
+              <div key={t.name} className="bg-slate-800 rounded-[2rem] p-8 border border-slate-700">
+                <p className="text-amber-400 text-sm mb-4">★★★★★</p>
+                <p className="text-sm text-slate-300 leading-relaxed italic mb-6">"{t.quote}"</p>
+                <p className="text-sm font-black text-white">{t.name}</p>
+                <p className="text-xs text-slate-500">{t.role}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section className="bg-white py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Pricing</p>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">Invest in your career</h2>
+            <p className="text-slate-500 font-medium">Cancel anytime. No contracts. No surprises.</p>
+          </div>
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 md:grid md:grid-cols-3 md:gap-8">
+            {[
+              { tier: 'free', price: '$0', title: 'Free Tier', features: ['1 Audit/mo', 'Basic Suggestions', 'Email Alerts'], popular: false },
+              { tier: 'pro', price: '$12', title: 'Pro Pack', features: ['Unlimited Audits', 'Full Rewrites', 'Keyword Insights', 'PDF Exports'], popular: true },
+              { tier: 'package', price: '$24', title: 'Career Suite', features: ['Everything in Pro', 'Cover Letter Gen', 'Photo AI Edit', 'Direct Support'], popular: false },
+            ].map((plan, i) => (
+              <div key={i} className={`snap-center min-w-[280px] flex-shrink-0 md:min-w-0 md:flex-shrink relative rounded-[2rem] border-2 p-8 flex flex-col ${plan.popular ? 'border-indigo-600 shadow-2xl shadow-indigo-600/10' : 'border-slate-100'}`}>
+                {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-black px-4 py-1 rounded-full">Most Popular</span>}
+                <h3 className="text-xl font-black text-slate-900 mb-2">{plan.title}</h3>
+                <div className="flex items-baseline mb-6"><span className="text-4xl font-black text-slate-900">{plan.price}</span><span className="text-sm font-bold text-slate-400 ml-1">/mo</span></div>
+                <ul className="space-y-3 mb-10 flex-1">
+                  {plan.features.map(f => <li key={f} className="text-sm font-medium text-slate-600 flex items-center"><i className="fas fa-circle-check text-emerald-500 mr-3"></i>{f}</li>)}
+                </ul>
+                <button
+                  onClick={() => { if (plan.tier === 'free') { setAuthMode('signup'); } else { const urls: Record<string, string> = { pro: GUMROAD_PRO_URL, package: GUMROAD_PACKAGE_URL }; if (urls[plan.tier]) window.open(urls[plan.tier], '_blank'); } }}
+                  className={`w-full py-4 rounded-2xl font-black text-sm transition-all ${plan.popular ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/10' : plan.tier === 'free' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-black'}`}
+                >{plan.tier === 'free' ? 'Get Started Free' : 'Upgrade Now'}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA BANNER */}
+      <section className="bg-indigo-600 py-20 px-4 text-center">
+        <h2 className="text-3xl md:text-4xl font-black text-white">Stop getting filtered out.</h2>
+        <h2 className="text-3xl md:text-4xl font-black text-white mt-1">Start getting interviews.</h2>
+        <p className="text-lg text-indigo-200 mt-4 mb-10">Join 20,000+ professionals who beat the bots with ATSBeaters.</p>
+        <button onClick={() => setAuthMode('signup')} className="px-10 py-4 bg-white text-indigo-600 rounded-2xl font-black text-base hover:bg-indigo-50 hover:-translate-y-0.5 transition-all shadow-xl active:scale-95">Scan My Resume — It's Free</button>
+      </section>
+
+    </div>
+  );
+  const renderHelp = () => (
     <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4">
       <div className="text-center">
         <h2 className="text-4xl font-black text-slate-900 mb-4">Support Center</h2>
@@ -770,6 +940,8 @@ const renderHelp = () => (
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
+        {!user && (<main className="flex-1 overflow-y-auto scroll-smooth">{renderLanding()}</main>)}
+        {user && (<>
         {/* Mobile Navigation Sidebar (Overlay) */}
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
@@ -823,6 +995,7 @@ const renderHelp = () => (
             ) : renderInput()}
           </div>
         </main>
+      </>)}
       </div>
       
       
