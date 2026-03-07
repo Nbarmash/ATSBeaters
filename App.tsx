@@ -837,6 +837,7 @@ const renderLanding = () => (
     );
   };
 
+  const isGuest = !user || user.id.startsWith('guest_');
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
       {authMode && renderAuth()}
@@ -917,13 +918,19 @@ const renderLanding = () => (
              <button onClick={() => setActiveTab(AppTab.HELP)} className="text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">FAQ</button>
           </nav>
           
-          {user && (
+          {isGuest && (
+            <div className="hidden sm:flex items-center space-x-3">
+              <button onClick={() => setAuthMode('login')} className="px-5 py-2.5 text-sm font-black text-slate-600 hover:text-indigo-600 border border-slate-200 rounded-xl transition-all">Sign In</button>
+              <button onClick={() => setAuthMode('signup')} className="px-5 py-2.5 text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-lg shadow-indigo-600/20">Get Started Free</button>
+            </div>
+          )}
+          {!isGuest && (
             <div className="flex items-center space-x-5">
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-black text-slate-900">{user.name}</p>
+                <p className="text-sm font-black text-slate-900">{user!.name}</p>
                 <div className="flex items-center justify-end space-x-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{user.tier} PASS</span>
+                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{user!.tier} PASS</span>
                 </div>
               </div>
               <button onClick={() => { auth.logout(); setUser(null); setActiveTab(AppTab.ANALYZER); }} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95 shadow-sm border border-slate-100">
@@ -940,8 +947,8 @@ const renderLanding = () => (
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {!user && (<main className="flex-1 overflow-y-auto scroll-smooth">{renderLanding()}</main>)}
-        {user && (<>
+        {isGuest && (<main className="flex-1 overflow-y-auto scroll-smooth">{renderLanding()}</main>)}
+        {!isGuest && (<>
         {/* Mobile Navigation Sidebar (Overlay) */}
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
