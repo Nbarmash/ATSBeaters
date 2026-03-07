@@ -300,36 +300,39 @@ const sendEmailReport = async (result: any, serviceType: string) => {
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4">
       {/* Analytics Hero */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 rounded-full"></div>
+        <div
+          className="bg-white p-4 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 relative isolate"
+          style={{ clipPath: 'inset(0 round 2rem)' }}
+        >
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 rounded-full -z-10"></div>
           <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Member Level</p>
-          <p className="text-3xl font-black text-slate-900 capitalize">{user.tier}</p>
+          <p className="text-2xl md:text-3xl font-black text-slate-900 capitalize truncate">{user.tier}</p>
           <button onClick={() => setShowPricing(true)} className="mt-4 text-xs font-bold text-indigo-600 hover:underline">Manage Subscription →</button>
         </div>
-        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+        <div className="bg-white p-4 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Analyses</p>
-          <p className="text-3xl font-black text-slate-900">{(user.history || []).length}</p>
+          <p className="text-2xl md:text-3xl font-black text-slate-900 truncate">{(user.history || []).length}</p>
           <div className="w-full h-1.5 bg-slate-100 rounded-full mt-5 overflow-hidden">
             <div className="h-full bg-indigo-400 rounded-full" style={{width: Math.min(100, (user.history || []).length * 10) + '%'}}></div>
           </div>
         </div>
-        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+        <div className="bg-white p-4 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
           <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Best ATS Score</p>
           {scoreTrend.length > 0 ? (
             <>
-              <p className="text-3xl font-black text-emerald-500">{Math.max(...scoreTrend.map(h => h.result.score))}%</p>
+              <p className="text-2xl md:text-3xl font-black text-emerald-500 truncate">{Math.max(...scoreTrend.map(h => h.result.score))}%</p>
               <p className="text-[10px] font-bold text-slate-400 mt-4 italic">Peak resume score</p>
             </>
           ) : (
             <>
-              <p className="text-3xl font-black text-slate-300">—</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-300 truncate">—</p>
               <p className="text-[10px] font-bold text-slate-400 mt-4 italic">Run an analysis to track</p>
             </>
           )}
         </div>
-        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+        <div className="bg-white p-4 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
           <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2">Credits Remaining</p>
-          <p className="text-3xl font-black text-slate-900">{user.credits}</p>
+          <p className="text-2xl md:text-3xl font-black text-slate-900 truncate">{user.credits}</p>
           <button onClick={() => setShowPricing(true)} className="mt-4 text-xs font-bold text-amber-600 hover:underline">Purchase More →</button>
         </div>
       </section>
@@ -676,13 +679,13 @@ const renderHelp = () => (
               <h2 className="text-4xl font-black text-slate-900 mb-3">Professional Plans</h2>
               <p className="text-slate-500 font-medium text-lg">Invest in your career. Get hired 2x faster.</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 md:grid md:grid-cols-3 md:gap-8 pb-2">
               {[
                 { tier: 'free', price: '$0', title: 'Free Tier', features: ['1 Audit/mo', 'Basic Suggestions', 'Email Alerts'], btn: 'Current', current: user?.tier === 'free' },
                 { tier: 'pro', price: '$12', title: 'Pro Pack', features: ['Unlimited Audits', 'Full Rewrites', 'Keyword Insights', 'PDF Exports'], btn: 'Upgrade', popular: true, current: user?.tier === 'pro' },
                 { tier: 'package', price: '$24', title: 'Career Suite', features: ['Everything in Pro', 'Cover Letter Gen', 'Photo AI Edit', 'Direct Support'], btn: 'Go Ultimate', current: user?.tier === 'package' },
               ].map((plan, i) => (
-                <div key={i} className={`p-8 rounded-[2rem] border-2 transition-all ${plan.popular ? 'border-indigo-600 scale-105 shadow-2xl shadow-indigo-600/10' : 'border-slate-100'} flex flex-col relative`}>
+                <div key={i} className={`snap-center min-w-[280px] flex-shrink-0 md:min-w-0 md:flex-shrink p-5 md:p-8 rounded-[2rem] border-2 transition-all ${plan.popular ? 'border-indigo-600 md:scale-105 shadow-2xl shadow-indigo-600/10' : 'border-slate-100'} flex flex-col relative`}>
                   {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full tracking-widest shadow-lg">HIGHLY RECOMMENDED</span>}
                   <h3 className="text-xl font-black text-slate-900 mb-2">{plan.title}</h3>
                   <div className="flex items-baseline mb-6">
@@ -736,7 +739,7 @@ const renderHelp = () => (
           <div className="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-600/20">
             <i className="fas fa-ghost text-xl"></i>
           </div>
-          <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-900">ATSBEATERS</h1>
+          <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-900 min-w-0 truncate">ATSBEATERS</h1>
         </div>
 
         <div className="flex items-center space-x-6">
@@ -771,7 +774,7 @@ const renderHelp = () => (
         {/* Mobile Navigation Sidebar (Overlay) */}
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
-            <aside className="w-72 h-full bg-white p-8 animate-in slide-in-from-left duration-300" onClick={e => e.stopPropagation()}>
+            <aside className="w-72 h-full bg-white p-8 transition-transform duration-300 translate-x-0" onClick={e => e.stopPropagation()}>
                <div className="space-y-2">
                  {menuItems.map(item => (
                    <button key={item.id} onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); handleReset(); }} className={`w-full flex items-center px-5 py-4 text-sm font-black rounded-2xl transition-all ${activeTab === item.id ? 'bg-indigo-50 text-indigo-600 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
@@ -786,7 +789,7 @@ const renderHelp = () => (
         {/* Desktop Sidebar */}
         <aside className="w-72 bg-white border-r border-slate-100 p-6 hidden md:block overflow-y-auto no-scrollbar no-print">
           <div className="mb-10 px-4">
-            <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Platform Core</h2>
+            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Core</h2>
           </div>
           <nav className="space-y-2">
             {menuItems.map((item) => (
@@ -801,7 +804,10 @@ const renderHelp = () => (
             ))}
           </nav>
           
-          <div className="mt-16 p-8 rounded-[2rem] bg-slate-900 text-white relative overflow-hidden group">
+          <div
+          className="mt-16 p-8 rounded-[2rem] bg-slate-900 text-white relative isolate group"
+          style={{ clipPath: 'inset(0 round 2rem)' }}
+        >
              <div className="relative z-10">
                 <p className="text-[10px] font-black tracking-widest text-indigo-400 uppercase mb-3">Community</p>
                 <h4 className="font-black text-base mb-6 leading-tight">Join the hiring revolution.</h4>
@@ -821,7 +827,7 @@ const renderHelp = () => (
       </div>
       
       
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-100 no-print">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-100 no-print" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around px-1 py-2">
           <button onClick={() => { setActiveTab(AppTab.DASHBOARD); handleReset(); setIsMobileMenuOpen(false); }} className={activeTab === AppTab.DASHBOARD ? "flex flex-col items-center py-1.5 px-3 text-indigo-600" : "flex flex-col items-center py-1.5 px-3 text-slate-400"}>
             <i className="fas fa-house-user text-lg mb-0.5"></i>
@@ -848,7 +854,7 @@ const renderHelp = () => (
       <footer className="py-8 border-t border-slate-100 bg-white no-print">
         <div className="max-w-7xl mx-auto px-10 flex flex-col md:flex-row items-center justify-between text-slate-400 text-xs font-bold">
           <div className="flex items-center space-x-6 mb-6 md:mb-0">
-             <span className="text-slate-600">ATSBeaters AI © 2024</span>
+             <span className="text-slate-600">ATSBeaters AI © 2025</span>
              <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
              <span>Trusted by 20,000+ Professionals</span>
           </div>
