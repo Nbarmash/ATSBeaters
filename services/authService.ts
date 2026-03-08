@@ -40,7 +40,8 @@ export async function logout(): Promise<void> {
 }
 
 // ─── GET CURRENT USER PROFILE ───────────────────────────────────────────────
-// Reads the Supabase session then fetches the user's row from public.profiles.
+// Reads the Supabase session then fetches the user's row from public.profiles
+// and their recent scan history from public.scan_history.
 // Returns null if there is no active session.
 export async function getCurrentProfile(): Promise<User | null> {
   const {
@@ -56,35 +57,102 @@ export async function getCurrentProfile(): Promise<User | null> {
 
   if (error || !profile) return null;
 
+  // Load scan history from public.scan_history (Session 6)
+  const { data: historyRows } = await supabase
+    .from('scan_history')
+    .select('id, type, input, result, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  const history: HistoryEntry[] = (historyRows || []).map((row: any) => ({
+    id: row.id,
+    type: row.type as AppTab,
+    input: row.input,
+    result: row.result,
+    timestamp: new Date(row.created_at).getTime(),
+  }));
+
   return {
     id: user.id,
     email: user.email ?? '',
     name: profile.name ?? user.user_metadata?.name ?? 'User',
     tier: (profile.tier as 'free' | 'pro' | 'package') ?? 'free',
     credits: profile.credits ?? 3,
-    history: [],          // Session 6 will load this from scan_history table
-    joinedAt: Date.now(), // Not stored in Session 5; placeholder
+    history,
+    joinedAt: new Date(profile.created_at ?? Date.now()).getTime(),
   };
 }
 
-// ─── SAVE TO HISTORY (local-only for now — Session 6 migrates to Supabase) ──
-// Logs a warning but does not block the user if Supabase write is not yet set up.
-export function saveToHistory(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): void {
-  // TODO Session 6: INSERT into public.scan_history
-  console.warn('[authService] saveToHistory: Supabase migration pending (Session 6)');
+// ─── SAVE TO HISTORY ────────────────────────────────────────────────────────
+// INSERTs a scan result into public.scan_history for the currently logged-in user.
+export async function saveToHistory(
+  entry: Omit<HistoryEntry, 'id' | 'timestamp'>
+): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { error } = await supabase.from('scan_history').insert({
+    user_id: user.id,
+    type: entry.type,
+    input: entry.input,
+    result: entry.result,
+  });
+
+  if (error) {
+    console.error('[authService] saveToHistory error:', error.message);
+  }
 }
 
-// ─── DEDUCT CREDIT (local-only for now) ─────────────────────────────────────
-export function deductCredit(): User | null {
-  // TODO Session 6: UPDATE profiles SET credits = credits - 1
-  console.warn('[authService] deductCredit: Supabase migration pending (Session 6)');
-  return null;
+// ─── DEDUCT CREDIT ──────────────────────────────────────────────────────────
+// Atomically decrements credits in public.profiles using a Postgres RPC call,
+// then returns the refreshed User profile so the UI can update immediately.
+// Returns null if the user is not logged in or the RPC fails.
+export async function deductCredit(): Promise<User | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Use Supabase RPC for atomic decrement — prevents race conditions
+  const { error: rpcError } = await supabase.rpc('decrement_credit', {
+    uid: user.id,
+  });
+
+  if (rpcError) {
+    console.error('[authService] deductCredit RPC error:', rpcError.message);
+    return null;
+  }
+
+  // Re-fetch the updated profile so the returned User has the new credit count
+  return getCurrentProfile();
 }
 
-// ─── UPGRADE TIER (local-only for now) ──────────────────────────────────────
-export function upgradeTier(_tier: 'pro' | 'package'): void {
-  // TODO Session 6: UPDATE profiles SET tier = $tier
-  console.warn('[authService] upgradeTier: Supabase migration pending (Session 6)');
+// ─── UPGRADE TIER ───────────────────────────────────────────────────────────
+// Updates the user's tier (and optionally credits) in public.profiles.
+// Called from redeemLicense in App.tsx after a successful Gumroad verification.
+export async function upgradeTier(
+  tier: 'pro' | 'package',
+  credits: number
+): Promise<User | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ tier, credits })
+    .eq('id', user.id);
+
+  if (error) {
+    console.error('[authService] upgradeTier error:', error.message);
+    return null;
+  }
+
+  return getCurrentProfile();
 }
 
 // ─── INTERNAL HELPERS ────────────────────────────────────────────────────────
@@ -95,9 +163,7 @@ function generatePassword(email: string): string {
 }
 
 // ─── LEGACY SHIM — kept so existing App.tsx import * as auth works ───────────
-// App.tsx calls auth.login(email, name) synchronously. We expose a no-op that
-// lets the TypeScript compiler stay happy while App.tsx is being updated.
-// Remove this once App.tsx has been fully migrated to the async signUp/loginWithMagicLink flow.
+// Remove once no callers remain.
 export function login(_email: string, _name: string): User {
   throw new Error(
     'auth.login() is no longer supported. Call auth.signUp() or auth.loginWithMagicLink() instead.'
