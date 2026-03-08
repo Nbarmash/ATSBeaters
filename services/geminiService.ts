@@ -66,7 +66,10 @@ const QUANTIFIER_SCHEMA = {
 export const analyzeResume = async (content: string): Promise<AnalysisResult> => {
     const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
-          contents: `Analyze this resume for ATS compatibility: ${content}`,
+          contents: `Analyze this resume for ATS compatibility: ${content}
+
+IMPORTANT FIELD RULES:
+- callbackImprovement must be a SHORT metric only — maximum 4 words. Examples: '3x more callbacks', '+67% response rate', '2x faster response'. Do NOT write a sentence or paragraph. A number + brief label only.`,
           config: { responseMimeType: "application/json", responseSchema: RESUME_SCHEMA }
     });
     return JSON.parse(response.text || '{}');
