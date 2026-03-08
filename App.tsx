@@ -92,12 +92,12 @@ const App: React.FC = () => {
       }
       setState({ isAnalyzing: false, result, error: null });
       // Task 7: Auto-save every analysis to history
-      auth.saveToHistory({ type: activeTab, input: input1, result });
+      await auth.saveToHistory({ type: activeTab, input: input1, result });
       setUser(/* getCurrentUser removed — session loaded via onAuthStateChange */ null);
       
       
           // Task 12: Deduct credit via authService
-          const updatedUser = auth.deductCredit();
+          const updatedUser = await auth.deductCredit();
           if (updatedUser) setUser(updatedUser);
     } catch (err: any) {
       setState({ isAnalyzing: false, result: null, error: err.message || 'Service failed' });
@@ -176,13 +176,13 @@ const App: React.FC = () => {
     const res = await fetch('/api/verify-license', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ licenseKey: licenseKey.trim() }),
+      body: JSON.stringify({ licenseKey: licenseKey.trim(), userId: user?.id }),
     });
     const data = await res.json();
     if (data.success) {
-      const updatedUser = { ...user, tier: data.tier, credits: data.credits };
-      // localStorage.setItem removed — Supabase profiles table updated in Session 6
-      setUser(updatedUser);
+      // Session 6: persist upgrade to Supabase via auth.upgradeTier
+      const updatedUser = await auth.upgradeTier(data.tier as 'pro' | 'package', data.credits);
+      if (updatedUser) setUser(updatedUser);
       setLicenseStatus('success');
       setLicenseMessage('License activated! Welcome to Pro.');
       setTimeout(() => setShowPricing(false), 2000);
