@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { AppTab, AnalysisState, User, HistoryEntry } from './types';
 import * as api from './services/geminiService';
 import * as auth from './services/authService';
@@ -13,13 +14,13 @@ const GUMROAD_PRO_URL = 'https://noahbarmash.gumroad.com/l/zeeawh';
 const GUMROAD_PACKAGE_URL = 'https://noahbarmash.gumroad.com/l/cpbvb';
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(auth.getCurrentUser());
-  const [activeTab, setActiveTab] = useState<AppTab>(user ? AppTab.DASHBOARD : AppTab.ANALYZER);
+  const [user, setUser] = useState<User | null>(null); // loaded async via onAuthStateChange
+  const [activeTab, setActiveTab] = useState<AppTab>(AppTab.ANALYZER);
   const [input1, setInput1] = useState('');
   const [input2, setInput2] = useState('');
   const [state, setState] = useState<AnalysisState>({ isAnalyzing: false, result: null, error: null });
   const [showPricing, setShowPricing] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'confirm' | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
@@ -28,13 +29,51 @@ const App: React.FC = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
   const [licenseKey, setLicenseKey] = useState('');
   const [licenseStatus, setLicenseStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [licenseMessage, setLicenseMessage] = useState('');
 
+  // ── Supabase auth listener — replaces localStorage polling ────────────────
+  useEffect(() => {
+    // Check for an existing session on first load
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const profile = await auth.getCurrentProfile();
+        if (profile) {
+          setUser(profile);
+          setActiveTab(AppTab.DASHBOARD);
+        }
+      }
+    });
+
+    // Listen for auth events: SIGNED_IN (magic link confirmed), SIGNED_OUT
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          const profile = await auth.getCurrentProfile();
+          if (profile) {
+            setUser(profile);
+            setActiveTab(AppTab.DASHBOARD);
+          }
+          setAuthMode(null); // close auth modal
+        }
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setActiveTab(AppTab.ANALYZER);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const runService = async () => {
         // Block unauthenticated (guest) users from Pro/paid features
-        if (user && user.id.startsWith('guest_') && (activeTab === AppTab.COVER_LETTER || activeTab === AppTab.PHOTO_EDITOR)) { setAuthMode('login'); return; }
+        if (!user && (activeTab === AppTab.COVER_LETTER || activeTab === AppTab.PHOTO_EDITOR)) {
+      setAuthMode('login');
+      return;
+    }
     if (user && user.credits <= 0 && user.tier === 'free') { setShowPricing(true); return; }
 
     setState({ isAnalyzing: true, result: null, error: null });
@@ -54,7 +93,7 @@ const App: React.FC = () => {
       setState({ isAnalyzing: false, result, error: null });
       // Task 7: Auto-save every analysis to history
       auth.saveToHistory({ type: activeTab, input: input1, result });
-      setUser(auth.getCurrentUser());
+      setUser(/* getCurrentUser removed — session loaded via onAuthStateChange */ null);
       
       
           // Task 12: Deduct credit via authService
@@ -67,8 +106,7 @@ const App: React.FC = () => {
 
   const handleSave = () => {
     if (state.result) {
-      auth.saveToHistory({ type: activeTab, input: input1, result: state.result });
-      setUser(auth.getCurrentUser());
+      auth.saveToHistory({ type: activeTab, input: input1, result: state.result }); // no-op until Session 6
       alert("Successfully saved to your profile!");
     }
   };
@@ -143,7 +181,7 @@ const App: React.FC = () => {
     const data = await res.json();
     if (data.success) {
       const updatedUser = { ...user, tier: data.tier, credits: data.credits };
-      localStorage.setItem('atsbeaters_user', JSON.stringify(updatedUser));
+      // localStorage.setItem removed — Supabase profiles table updated in Session 6
       setUser(updatedUser);
       setLicenseStatus('success');
       setLicenseMessage('License activated! Welcome to Pro.');
@@ -159,7 +197,7 @@ const App: React.FC = () => {
 };
 
 const sendEmailReport = async (result: any, serviceType: string) => {
-    if (!user || !user.email || user.email.includes('guest') || user.email.includes('trial')) return;
+    if (!user || !user.email) return;
     setIsSendingEmail(true);
     setEmailSent(false);
     try {
@@ -212,15 +250,41 @@ const sendEmailReport = async (result: any, serviceType: string) => {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const email = formData.get('email') as string;
-    const name = formData.get('name') as string || 'Career Pro';
-    const loggedInUser = auth.login(email, name);
-    setUser(loggedInUser);
-    setAuthMode(null);
-    setActiveTab(AppTab.DASHBOARD);
+    const email = (formData.get('email') as string).trim();
+    const name = (formData.get('name') as string || 'Career Pro').trim();
+    setEmailInput(email);
+    setAuthLoading(true);
+    setAuthError(null);
+
+    if (authMode === 'signup') {
+      const { error, needsConfirmation } = await auth.signUp(email, name);
+      if (error) {
+        setAuthError(error);
+      } else if (needsConfirmation) {
+        setAuthMode('confirm');
+      }
+      // If no confirmation needed (email confirm OFF), onAuthStateChange fires automatically
+    } else {
+      // login path: send magic link
+      const { error } = await auth.loginWithMagicLink(email);
+      if (error) {
+        setAuthError(error);
+      } else {
+        setAuthMode('confirm');
+      }
+    }
+    setAuthLoading(false);
+  };
+
+  const handleResend = async () => {
+    if (!emailInput) return;
+    await auth.loginWithMagicLink(emailInput);
   };
 
   const menuItems = [
@@ -240,40 +304,65 @@ const sendEmailReport = async (result: any, serviceType: string) => {
 
   const renderAuth = () => (
     <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 border border-slate-100">
-        <button onClick={() => setAuthMode(null)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-500"><i className="fas fa-times text-xl"></i></button>
-        <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-xl shadow-indigo-600/20">
-            <i className="fas fa-fingerprint"></i>
-          </div>
-          <h2 className="text-3xl font-black text-slate-900 mb-2">{authMode === 'login' ? 'Welcome Back' : 'Get Started'}</h2>
-          <p className="text-slate-500 font-medium leading-relaxed">Join 20k+ job seekers beating the bots daily.</p>
-        </div>
-        <form onSubmit={handleLogin} className="space-y-5">
-          {authMode === 'signup' && (
-            <div className="relative">
-              <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-              <input name="name" type="text" placeholder="Full Name" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700" />
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 border border-slate-100 relative">
+        <button onClick={() => { setAuthMode(null); setAuthError(null); }} className="absolute top-8 right-8 text-slate-300 hover:text-slate-500"><i className="fas fa-times text-xl"></i></button>
+
+        {/* ── CONFIRM STATE — magic link sent ── */}
+        {authMode === 'confirm' ? (
+          <div className="text-center py-8 px-4">
+            <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <i className="fas fa-envelope-circle-check text-3xl text-indigo-600"></i>
             </div>
-          )}
-          <div className="relative">
-             <i className="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-             <input name="email" type="email" placeholder="Email Address" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700" />
+            <h3 className="text-2xl font-black text-slate-900 mb-3">Check your email</h3>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
+              We sent a sign-in link to <strong>{emailInput}</strong>. Click it to access your account — no password needed.
+            </p>
+            <p className="text-xs text-slate-400 mt-6">
+              Didn't get it? Check your spam folder or{' '}
+              <button onClick={handleResend} className="text-indigo-500 font-bold hover:underline">
+                resend the link
+              </button>
+            </p>
           </div>
-          <button className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-600/10 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">
-            {authMode === 'login' ? 'Login to Dashboard' : 'Create Free Account'}
-          </button>
-        </form>
-        <div className="mt-8 pt-8 border-t border-slate-50 flex flex-col items-center space-y-4">
-           <p className="text-sm text-slate-400 font-medium">By continuing, you agree to our Terms of Service.</p>
-           <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-indigo-600 font-bold hover:underline">
-              {authMode === 'login' ? "New here? Create account" : "Already registered? Login here"}
-           </button>
-        </div>
+        ) : (
+          <>
+            <div className="text-center mb-10">
+              <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-xl shadow-indigo-600/20">
+                <i className="fas fa-fingerprint"></i>
+              </div>
+              <h2 className="text-3xl font-black text-slate-900 mb-2">{authMode === 'login' ? 'Welcome Back' : 'Get Started'}</h2>
+              <p className="text-slate-500 font-medium leading-relaxed">Join 20k+ job seekers beating the bots daily.</p>
+            </div>
+            <form onSubmit={handleAuthSubmit} className="space-y-5">
+              {authMode === 'signup' && (
+                <div className="relative">
+                  <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  <input name="name" type="text" placeholder="Full Name" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700" />
+                </div>
+              )}
+              <div className="relative">
+                <i className="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input name="email" type="email" placeholder="Email Address" required className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-4 focus:ring-indigo-100 outline-none font-medium text-slate-700" />
+              </div>
+              {authError && (
+                <p className="text-sm text-rose-500 font-medium text-center">{authError}</p>
+              )}
+              <button disabled={authLoading} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-600/10 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3">
+                {authLoading && <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                {authMode === 'login' ? 'Send Sign-in Link' : 'Create Free Account'}
+              </button>
+            </form>
+            <div className="mt-8 pt-8 border-t border-slate-50 flex flex-col items-center space-y-4">
+              <p className="text-sm text-slate-400 font-medium">By continuing, you agree to our Terms of Service.</p>
+              <button onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(null); }} className="text-indigo-600 font-bold hover:underline">
+                {authMode === 'login' ? "New here? Create account" : "Already registered? Login here"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
-
   const renderDashboard = () => {
   if (!user) return null;
 
@@ -700,7 +789,7 @@ const renderLanding = () => (
   const renderInput = () => {
     if (activeTab === AppTab.DASHBOARD) return renderDashboard();
     if (activeTab === AppTab.PHOTO_EDITOR) return <ProtectedFeature feature="headshot" user={user} onRequestLogin={() => setAuthMode('login')}><PhotoEditor /></ProtectedFeature>;
-        if (activeTab === AppTab.COVER_LETTER && (!user || user.id.startsWith('guest_') || (user.tier !== 'pro' && user.tier !== 'package'))) return <ProtectedFeature feature="cover_letter" user={user} onRequestLogin={() => setAuthMode('login')}><div /></ProtectedFeature>;
+        if (activeTab === AppTab.COVER_LETTER && (!user || (user.tier !== 'pro' && user.tier !== 'package'))) return <ProtectedFeature feature="cover_letter" user={user} onRequestLogin={() => setAuthMode('login')}><div /></ProtectedFeature>;
     if (activeTab === AppTab.HELP) return renderHelp();
 
     const configs: Record<string, any> = {
@@ -820,7 +909,7 @@ const renderLanding = () => (
                 {isDownloading ? <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2"></div> : <i className="fas fa-file-arrow-down mr-2"></i>}
                 Download
               </button>
-              {user && !user.email.includes('guest') && (
+              {user && (
                 <button onClick={() => sendEmailReport(state.result, activeTab)} disabled={isSendingEmail || emailSent} className={`text-xs font-black px-5 py-2.5 rounded-xl border flex items-center transition-all active:scale-95 disabled:opacity-50 ${emailSent ? 'text-emerald-600 border-emerald-100 bg-emerald-50' : 'text-violet-600 border-violet-100 hover:bg-violet-50'}`}>
                   {isSendingEmail ? <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mr-2"></div> : <i className={`fas ${emailSent ? 'fa-check' : 'fa-paper-plane'} mr-2`}></i>}
                   {emailSent ? 'Sent!' : 'Email Me'}
@@ -837,7 +926,7 @@ const renderLanding = () => (
     );
   };
 
-  const isGuest = !user || user.id.startsWith('guest_');
+  const isGuest = !user;
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
       {authMode && renderAuth()}
@@ -933,7 +1022,7 @@ const renderLanding = () => (
                   <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{user!.tier} PASS</span>
                 </div>
               </div>
-              <button onClick={() => { auth.logout(); setUser(null); setActiveTab(AppTab.ANALYZER); }} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95 shadow-sm border border-slate-100">
+              <button onClick={() => { auth.logout(); }} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95 shadow-sm border border-slate-100">
                 <i className="fas fa-power-off"></i>
               </button>
             </div>
