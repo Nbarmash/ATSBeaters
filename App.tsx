@@ -998,7 +998,7 @@ const renderLanding = () => (
         <main className="flex-1 overflow-y-auto p-4 md:p-12 scroll-smooth pb-24 md:pb-12">
           <div className="max-w-6xl mx-auto pb-24">
             {activeTab === AppTab.ANALYZER && state.result ? (
-              <AnalysisDashboard result={state.result} onReset={handleReset} onSave={handleSave} />
+              <AnalysisDashboard result={state.result} onReset={handleReset} onSave={handleSave} userTier={user?.tier} />
             ) : renderInput()}
           </div>
         </main>
